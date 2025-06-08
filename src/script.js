@@ -14,7 +14,7 @@ class Ship {
     this.#numberOfTimesHit += 1;
   };
 
-  checkIfDestroyed = function () {
+  checkForDestroyed = function () {
     if (this.#length === this.#numberOfTimesHit) this.#isDestroyed = true;
   };
 
@@ -30,9 +30,19 @@ class Ship {
 class GameBoard {
   #gridSize = 5;
   #grid = [
-    // -1 empty
-    // 0 invalid position
-    // 1 occupied
+
+    /* 
+    -1 empty
+    0 invalid position
+    1 occupied
+
+    [0, 1, 2, 3, 4, 5]
+    [0, 1, 2, 3, 4, 5]
+    [0, 1, 2, 3, 4, 5]
+    [0, 1, 2, 3, 4, 5]
+    [0, 1, 2, 3, 4, 5]
+    
+    */
     
     [-1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1],
@@ -43,8 +53,8 @@ class GameBoard {
 
   placeShip = function (ship, iPosition, jPosition) {
     if (
-      this.checkIfDesiredPositionIsOOB(iPosition, jPosition) &&
-      this.checkIfShipIsTooLarge(ship, iPosition, jPosition)
+      this.checkForDesiredPositionIsOOB(iPosition, jPosition) &&
+      this.checkForEdgeCollision(ship, iPosition, jPosition)
     ) {
 
         return true;
@@ -53,7 +63,7 @@ class GameBoard {
     return false;
   };
   //OOB = OUT OF BOUNDS
-  checkIfDesiredPositionIsOOB = function (iPosition, jPosition) {
+  checkForDesiredPositionIsOOB = function (iPosition, jPosition) {
     if (
       iPosition >= this.#gridSize ||
       jPosition >= this.#gridSize ||
@@ -66,29 +76,40 @@ class GameBoard {
     return true;
   }
 
-  checkIfShipIsTooLarge = function (ship, iPosition, jPosition) {
+  checkForEdgeCollision = function (ship, iPosition, jPosition) {
+
     const length = ship.getLength();
     const startingPoint = 0;
     const middlePoint = Math.trunc(length / 2);
     const endPoint = length - 1;
 
-    const startingSide = startingPoint + middlePoint;
-    const endingSide = endPoint - middlePoint;
+    const startOffset = startingPoint + middlePoint;
+    const endOffset = endPoint - middlePoint;
     
-    console.log(startingSide);
-    console.log(endingSide);
-
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
 
     console.log(desiredPosition);
     if (
-      desiredPosition - startingSide < 0 ||
-      desiredPosition + endingSide >= this.#gridSize
+      desiredPosition - startOffset >= 0 &&
+      desiredPosition + endOffset < this.#gridSize &&
+      checkForShipCollision(ship.horizontal, length, iPosition, jPosition, startOffset)
     ) { 
       return false;
     }
 
     return true;
+  }
+
+  checkForShipCollision = function(horizontal, length, iPosition, jPosition, startOffset){
+    
+    let iPos = iPosition;
+    let jPos = jPosition;
+    
+    const startingPosition = 
+
+    for(let i = 0; i < length; i++){
+      
+    }
   }
 
 }
