@@ -19,7 +19,7 @@ class Ship {
   };
 
   rotate = function(){
-    this.horizontal = false;
+    this.horizontal = this.horizontal ? false : true;
   }
 
   getLength = function(){
@@ -29,32 +29,23 @@ class Ship {
 
 class GameBoard {
   #gridSize = 5;
+  #VALID_POSITION = -1
+  #INVALID_POSITION = 0
   #grid = [
 
-    /* 
-    -1 empty
-    0 invalid position
-    1 occupied
-
-    [0, 1, 2, 3, 4, 5]
-    [0, 1, 2, 3, 4, 5]
-    [0, 1, 2, 3, 4, 5]
-    [0, 1, 2, 3, 4, 5]
-    [0, 1, 2, 3, 4, 5]
-    
-    */
-    
+    [0, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1],
     [-1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1],
+    [-1, -1, -1,  1, -1],
+    [-1,  1, -1, -1, -1],
   ];
 
   placeShip = function (ship, iPosition, jPosition) {
     if (
-      this.checkForDesiredPositionIsOOB(iPosition, jPosition) &&
-      this.checkForEdgeCollision(ship, iPosition, jPosition)
+      this.checkForOutOfBoundsPosition(iPosition, jPosition) &&
+      this.checkForValidPosition(iPosition, jPosition) &&
+      this.checkForShipUnfitInPosition(ship, iPosition, jPosition) &&
+      this.checkForShipCollision(ship, iPosition, jPosition)
     ) {
 
         return true;
@@ -62,8 +53,8 @@ class GameBoard {
 
     return false;
   };
-  //OOB = OUT OF BOUNDS
-  checkForDesiredPositionIsOOB = function (iPosition, jPosition) {
+
+  checkForOutOfBoundsPosition = function (iPosition, jPosition) {
     if (
       iPosition >= this.#gridSize ||
       jPosition >= this.#gridSize ||
@@ -76,7 +67,13 @@ class GameBoard {
     return true;
   }
 
-  checkForEdgeCollision = function (ship, iPosition, jPosition) {
+  checkForValidPosition = function(iPosition, jPosition){
+
+    return this.#grid[iPosition][jPosition] != this.#VALID_POSITION ? false : true;
+
+  }
+
+  checkForShipUnfitInPosition = function (ship, iPosition, jPosition) {
 
     const length = ship.getLength();
     const startingPoint = 0;
@@ -88,35 +85,50 @@ class GameBoard {
     
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
 
-    console.log(desiredPosition);
     if (
-      desiredPosition - startOffset >= 0 &&
-      desiredPosition + endOffset < this.#gridSize &&
-      checkForShipCollision(ship.horizontal, length, iPosition, jPosition, startOffset)
-    ) { 
+      desiredPosition - startOffset < 0 ||
+      desiredPosition + endOffset >= this.#gridSize) { 
       return false;
     }
 
     return true;
   }
 
-  checkForShipCollision = function(horizontal, length, iPosition, jPosition, startOffset){
-    
-    let iPos = iPosition;
-    let jPos = jPosition;
-    
-    const startingPosition = 
+  checkForShipCollision = function(ship, iPosition, jPosition){
+    const length = ship.getLength();
+    const startingPoint = 0;
+    const middlePoint = Math.trunc(length / 2);
+    const endPoint = length - 1;
 
-    for(let i = 0; i < length; i++){
-      
+    const startOffset = startingPoint + middlePoint;
+    const endOffset = endPoint - middlePoint;
+
+    const desiredPosition = ship.horizontal ? jPosition : iPosition;
+
+    const shipStartingPosition = desiredPosition - startOffset;
+    const shipEndingPosition = desiredPosition  + endOffset;
+
+    let n = shipStartingPosition;
+
+    console.log(`Horizontal? : ${ship.horizontal}`);
+    console.log(`Starting Pos : ${shipStartingPosition}`);
+    console.log(`Ending Pos : ${shipEndingPosition}`);
+
+    if(ship.horizontal){
+      for(;n <= shipEndingPosition; n++){
+        if(this.#grid[iPosition][n] != this.#VALID_POSITION)
+          return false;
+      }
+    }else{
+      for(;n <= shipEndingPosition; n++){
+        if(this.#grid[n][jPosition] != this.#VALID_POSITION)
+          return false;
+      }
     }
+    return true;
+
   }
 
 }
-
-const testShip = new Ship(3);
-const testGameBoard = new GameBoard();
-
-testGameBoard.placeShip(testShip, 4, 2);
 
 export { Ship,GameBoard };
