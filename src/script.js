@@ -2,6 +2,12 @@ class Ship {
   #length = 0;
   #numberOfTimesHit = 0;
   #isDestroyed = false;
+  #startingPoint = 0;
+  #middlePoint = Math.trunc(length / 2);
+  #endPoint = length - 1;
+  #startOffSet = this.#startingPoint + this.#middlePoint;
+  #endOffSet = this.#endPoint - this.#middlePoint;
+
   horizontal = true;
 
   constructor(length, horizontal = true) {
@@ -24,6 +30,14 @@ class Ship {
   getLength = function () {
     return this.#length;
   };
+
+  getStartOffSet = function(){
+    return this.#startOffSet
+  }
+
+  getEndOffSet = function(){
+    return this.#endOffSet
+  }
 }
 
 class GameBoard {
@@ -115,19 +129,12 @@ class GameBoard {
   };
 
   doesTheShipFitInTheDesiredPosition = function (ship, iPosition, jPosition) {
-    const length = ship.getLength();
-    const startingPoint = 0;
-    const middlePoint = Math.trunc(length / 2);
-    const endPoint = length - 1;
-
-    const startOffset = startingPoint + middlePoint;
-    const endOffset = endPoint - middlePoint;
 
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
 
     if (
-      desiredPosition - startOffset < 0 ||
-      desiredPosition + endOffset >= this.#GRID_SIZE
+      desiredPosition - ship.startOffset < 0 ||
+      desiredPosition + ship.endOffset >= this.#GRID_SIZE
     ) {
       return false;
     }
@@ -136,18 +143,10 @@ class GameBoard {
   };
 
   areThereShipCollisions = function (ship, iPosition, jPosition) {
-    const length = ship.getLength();
-    const startingPoint = 0;
-    const middlePoint = Math.trunc(length / 2);
-    const endPoint = length - 1;
-
-    const startOffset = startingPoint + middlePoint;
-    const endOffset = endPoint - middlePoint;
-
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
 
-    const shipStartingPosition = desiredPosition - startOffset;
-    const shipEndingPosition = desiredPosition + endOffset;
+    const shipStartingPosition = desiredPosition - ship.startOffset;
+    const shipEndingPosition = desiredPosition + ship.endOffset;
 
     let n = shipStartingPosition;
 
