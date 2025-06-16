@@ -1,0 +1,14 @@
+
+
+.box-container{ 
+    width: 150px;
+    height: 150px;
+    border: 1px solid black;
+
+}
+
+.box{
+    background-color: aqua;
+    width: 150px;
+    height: 150px;
+}

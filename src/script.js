@@ -1,7 +1,7 @@
 class Ship {
   #length = 0;
   #numberOfTimesHit = 0;
-  #isDestroyed = false;
+  #destroyed = false;
   #startingPoint = 0;
   #middlePoint = 0;
   #endPoint = 0;
@@ -25,8 +25,8 @@ class Ship {
     this.#numberOfTimesHit += 1;
   };
 
-  checkForDestroyed = function () {
-    if (this.#length === this.#numberOfTimesHit) this.#isDestroyed = true;
+  isDestroyed = function () {
+    if (this.#length === this.#numberOfTimesHit) this.#destroyed = true;
   };
 
   rotate = function () {
@@ -44,52 +44,22 @@ class Ship {
   getEndOffSet = function(){
     return this.#endOffSet
   }
+
+  getMiddlePoint(){
+    return this.#middlePoint;
+  }
 }
 
 class GameBoard {
   #GRID_SIZE = 8;
-  #MISSED_SHOT_POSITION = -2;
+  #SHOT_HIT = -3;
+  #SHOT_MISSED = -2;
   #VALID_POSITION = -1;
   #INVALID_POSITION = 0;
   #OCCUPIED_POSITION = 1;
   #MAX_SHIPS = 7;
-  #shipData = [
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-    {
-      ship: null,
-      iPosition: null,
-      jPosition: null,
-    },
-  ];
+  #destroyed_ships = [];
+  #ships = [];
 
   #grid = [
     [0, -1, -1, -1, -1, -1, -1, -1],
@@ -116,14 +86,15 @@ class GameBoard {
     }
   }
 
-  getShips() {
+  getShips() {   
     const shipSizes = [1, 1, 2, 2, 3, 3, 4];
     for (let i = 0; i < this.#MAX_SHIPS; i++) {
-      this.#shipData[i].ship = new Ship(shipSizes[i]);
+      this.#ships.push(new Ship(shipSizes[i]));
     }
   };
 
   printGameBoard(){
+    console.log();
     for(let i = 0; i < this.#GRID_SIZE; i++){
       let temp = "";
       for(let j = 0; j < this.#GRID_SIZE; j++){
@@ -158,14 +129,13 @@ class GameBoard {
     for(let i = 0; i < this.#GRID_SIZE; i++){
       for(let j = 0; j < this.#GRID_SIZE; j++){
         const currentPosition = this.#grid[i][j];
-        if(currentPosition >= this.#OCCUPIED_POSITION || currentPosition === this.#MISSED_SHOT_POSITION) continue;
-        
+        if(currentPosition >= this.#OCCUPIED_POSITION) continue;
+          
         if(this.isThereAShipInCellPerimeter(i, j)) this.#grid[i][j] = this.#INVALID_POSITION;
         else this.#grid[i][j] = this.#VALID_POSITION;
     
       }
     }
-    
   }
   
   isThereAShipInCellPerimeter(iPosition, jPosition){
@@ -186,34 +156,35 @@ class GameBoard {
     return false;
   }
 
-  placeShip(shipNumber, iPosition, jPosition){
+  placeShip(shipNumber, iPosition, jPosition){  
 
-    const ship = this.#shipData[shipNumber].ship;
-
+    const ship = this.#ships[shipNumber];
     if(this.isDesiredPositionValid(ship, iPosition, jPosition)){
-      this.placeShipHelper(ship, iPosition, jPosition);
-      this.refreshGameBoard();
+      this.placeShipHelper(ship, shipNumber, iPosition, jPosition);
       return true;
+
     };
 
+    console.log("returning false");
     return false;
     
   }
 
-  placeShipHelper(ship, iPosition, jPosition){
+  placeShipHelper(ship, shipNumber, iPosition, jPosition){
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
     const shipStartingPosition = desiredPosition - ship.getStartOffSet();
     const shipEndingPosition = desiredPosition + ship.getEndOffSet();
 
     let n = shipStartingPosition;
+    let adjustedShipNumber = shipNumber + 1;
 
     if (ship.horizontal) {
       for (; n <= shipEndingPosition; n++) {
-        this.#grid[iPosition][n] = 1;
+        this.#grid[iPosition][n] = adjustedShipNumber;
       }
     } else {
       for (; n <= shipEndingPosition; n++) {
-        this.#grid[n][jPosition] = 1;
+        this.#grid[n][jPosition] = adjustedShipNumber;
       }
     }
   }
@@ -283,7 +254,40 @@ class GameBoard {
     }
     return true;
   };
+
+  receiveAttack(iPos, jPos){
+
+    if(this.#grid[iPos][jPos] >= this.#OCCUPIED_POSITION){
+      const shipNumber = this.#grid[iPos][jPos] - 1; // ADJUSTED FOR ARRAY INDEX MATCHING
+      const attackedShip = this.#ships[shipNumber];
+      attackedShip.hit();
+      this.#grid[iPos][jPos] = this.#SHOT_HIT; 
+      return; // should be an object for front end synchronization
+    }
+    
+    if(this.#grid[iPos][jPos] === this.#VALID_POSITION || this.#grid[iPos][jPos] === this.#INVALID_POSITION){
+      this.#grid[iPos][jPos] = this.#SHOT_MISSED;
+      return;
+    }
+  }
+
+  getDestroyedShips(){
+    return this.#destroyed_ships;
+  }
+
+  getShipData(){
+    return this.#ships;
+  }
+
 }
+
+const board = new GameBoard();
+board.initGameBoard();
+board.placeShip(0, 0, 0);
+board.receiveAttack(0, 0);
+board.receiveAttack(1, 0);
+
+
 
 
 export { Ship, GameBoard };
