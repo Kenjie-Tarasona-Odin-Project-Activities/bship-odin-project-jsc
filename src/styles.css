@@ -14,15 +14,15 @@
 .ship{
     position: absolute;
     border: 1px solid black;
-    padding: 10px;
     display: flex;
+    position: absolute;
 
 }
 
 .ship-section{
-    width: 150px;
-    height: 150px;
-    border: 5px solid blue;
+    width: 95px;
+    height: 95px;
+    border: 1px solid blue;
 }
 
 
