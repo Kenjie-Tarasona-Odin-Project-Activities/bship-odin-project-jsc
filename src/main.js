@@ -1,9 +1,10 @@
-import "./styles.css";
+  import "./styles.css";
 
 const numberOfCells = 64;
 const cellContainer = document.querySelector(".cell-container");
 const body = document.querySelector("body");
 const dragData = {
+  draggables: [],
   isThereAnElementGettingDragged: false,
   current: null,
   distanceFromMiddlePoint: null,
@@ -25,14 +26,12 @@ function createShip(shipNumber, shipLength) {
   const ship = document.createElement("div");
   ship.classList.add("ship");
 
-  bindEventListenerToShip(ship, shipNumber);
-
   let distanceFromMiddlePoint = Math.trunc(shipLength / 2);
   for (let i = 0; i < shipLength; i++) {
     const shipSection = document.createElement("div");
     shipSection.classList.add("ship-section");
 
-    bindEventListenerToShipSection(shipSection, distanceFromMiddlePoint);
+    bindEventListenerToShipSection(ship, shipNumber, shipSection, distanceFromMiddlePoint);
     distanceFromMiddlePoint -= 1;
 
     ship.appendChild(shipSection);
@@ -40,50 +39,54 @@ function createShip(shipNumber, shipLength) {
   }
 
   body.appendChild(ship);
+  dragData.draggables.push(
+    {
+      isPlaced: false,
+      shipElementObject : ship,
+    }
+  );
 }
 
-function bindEventListenerToShipSection(shipSection, distanceFromMiddlePoint) {
+function bindEventListenerToShipSection(ship, shipNumber, shipSection, distanceFromMiddlePoint) {
   shipSection.addEventListener("mousedown", () => {
     dragData.distanceFromMiddlePoint = distanceFromMiddlePoint;
+    dragData.current = shipNumber;
+    dragData.isThereAnElementGettingDragged = true;
   });
-
-  shipSection.addEventListener("mouseup", () => {
-    dragData.distanceFromMiddlePoint = null;
-  });
+  
 }
 
-function bindEventListenerToShip(ship, shipNumber) {
-  ship.addEventListener("mousedown", (e) => {
-    dragData.isThereAnElementGettingDragged = true;
-    dragData.current = shipNumber;
+document.addEventListener("mousedown", e => {
+  dragData.startX = e.clientX;
+  dragData.startY = e.clientY;
+  console.log(dragData);
+})
+
+document.addEventListener("mousemove", e => {
+  if (dragData.isThereAnElementGettingDragged) {
+    const ship = dragData.draggables[dragData.current].shipElementObject;
+    let newX = dragData.startX - e.clientX;
+    let newY = dragData.startY - e.clientY;
+
     dragData.startX = e.clientX;
     dragData.startY = e.clientY;
 
-    console.log(dragData);
-  });
+    ship.style.left = `${ship.offsetLeft - newX}px`;
+    ship.style.top = `${ship.offsetTop - newY}px`;
+  }
+});
 
-  ship.addEventListener("mouseup", () => {
-    dragData.isThereAnElementGettingDragged = false;
-    dragData.current = null;
-    dragData.startX = null;
-    dragData.startY = null;
+document.addEventListener("mouseup", () => {
+  dragData.isThereAnElementGettingDragged = false;
+  dragData.current = null;
+  dragData.startX = null;
+  dragData.startY = null;
 
-    console.log(dragData);
-  });
+  console.log(dragData);
+}); 
 
-  ship.addEventListener("mousemove", (e) => {
-    if (dragData.isThereAnElementGettingDragged) {
-      let newX = dragData.startX - e.clientX;
-      let newY = dragData.startY - e.clientY;
 
-      dragData.startX = e.clientX;
-      dragData.startY = e.clientY;
 
-      ship.style.left = `${ship.offsetLeft - newX}px`;
-      ship.style.top = `${ship.offsetTop - newY}px`;
-    }
-  });
-}
-
-createShip(1, 4);
+createShip(0, 4);
+createShip(1, 2);
 createCells(cellContainer);

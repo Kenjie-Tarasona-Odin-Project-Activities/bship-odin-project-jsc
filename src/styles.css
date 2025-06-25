@@ -25,4 +25,7 @@
     border: 1px solid blue;
 }
 
+.ship-section:hover{
+    cursor: grab;
+}
 
