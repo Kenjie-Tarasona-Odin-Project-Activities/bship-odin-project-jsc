@@ -287,7 +287,6 @@ board.placeShip(0, 0, 0);
 board.receiveAttack(0, 0);
 board.receiveAttack(1, 0);
 
-
-
-
-export { Ship, GameBoard };
+export{
+  board  
+}

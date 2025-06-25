@@ -1,6 +1,7 @@
-  import "./styles.css";
+import "./styles.css";
+import {board} from "./script.js";
 
-const numberOfCells = 64;
+const GRID_SIZE = 8;
 const cellContainer = document.querySelector(".cell-container");
 const body = document.querySelector("body");
 const dragData = {
@@ -15,11 +16,27 @@ const dragData = {
 // const shipSizes = [1, 1, 2, 2, 3, 3, 4];
 
 function createCells(parentElement) {
-  for (let i = 0; i < numberOfCells; i++) {
-    const cell = document.createElement("div");
-    cell.classList.add("cell");
-    parentElement.appendChild(cell);
+  for (let i = 0; i < GRID_SIZE; i++) {
+    for(let j = 0; j < GRID_SIZE; j++){
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      bindEventListenerToGridCell(cell, i, j);
+      parentElement.appendChild(cell);
+    }
   }
+}
+
+function bindEventListenerToGridCell(cell, i, j){
+  cell.addEventListener("mouseover", e => {
+    if(dragData.isThereAnElementGettingDragged){
+      determineMiddlePoint(distanceFromMiddlePoint, i, j);
+    }
+  });
+}
+
+function determineMiddlePoint(distanceFromMiddlePoint, i, j){
+  const newJ = j + dragData.distanceFromMiddlePoint;
+
 }
 
 function createShip(shipNumber, shipLength) {
