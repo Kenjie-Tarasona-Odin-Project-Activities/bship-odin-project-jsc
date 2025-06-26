@@ -1,5 +1,5 @@
 import "./styles.css";
-import {board} from "./script.js";
+import { board } from "./script.js";
 
 const GRID_SIZE = 8;
 const cellContainer = document.querySelector(".cell-container");
@@ -17,7 +17,7 @@ const dragData = {
 
 function createCells(parentElement) {
   for (let i = 0; i < GRID_SIZE; i++) {
-    for(let j = 0; j < GRID_SIZE; j++){
+    for (let j = 0; j < GRID_SIZE; j++) {
       const cell = document.createElement("div");
       cell.classList.add("cell");
       bindEventListenerToGridCell(cell, i, j);
@@ -26,17 +26,29 @@ function createCells(parentElement) {
   }
 }
 
-function bindEventListenerToGridCell(cell, i, j){
-  cell.addEventListener("mouseover", e => {
-    if(dragData.isThereAnElementGettingDragged){
-      determineMiddlePoint(distanceFromMiddlePoint, i, j);
+cellContainer.addEventListener("mouseenter", () => {
+  const ship = dragData.draggables[dragData.current].shipElementObject;
+  if (dragData.isThereAnElementGettingDragged) ship.style.display = "none";
+});
+
+cellContainer.addEventListener("mouseout", () => {
+  const ship = dragData.draggables[dragData.current].shipElementObject;
+  if (dragData.isThereAnElementGettingDragged) ship.style.display = "block";
+});
+
+function bindEventListenerToGridCell(cell, i, j) {
+  cell.addEventListener("mouseenter", (e) => {
+    if (dragData.isThereAnElementGettingDragged) {
+      const newJ = j + dragData.distanceFromMiddlePoint;
+      const ship = dragData.draggables[dragData.current].shipElementObject;
+      console.log(ship);
+      console.log(`cell : ${i}, ${j}`);
+
+      // if (board.receiveAttack(dragData.current, i, newJ)) {
+      //   console.log("placeship success");
+      // }
     }
   });
-}
-
-function determineMiddlePoint(distanceFromMiddlePoint, i, j){
-  const newJ = j + dragData.distanceFromMiddlePoint;
-
 }
 
 function createShip(shipNumber, shipLength) {
@@ -48,38 +60,44 @@ function createShip(shipNumber, shipLength) {
     const shipSection = document.createElement("div");
     shipSection.classList.add("ship-section");
 
-    bindEventListenerToShipSection(ship, shipNumber, shipSection, distanceFromMiddlePoint);
+    bindEventListenerToShipSection(
+      ship,
+      shipNumber,
+      shipSection,
+      distanceFromMiddlePoint,
+    );
     distanceFromMiddlePoint -= 1;
 
     ship.appendChild(shipSection);
-    console.log(shipSection);
   }
 
   body.appendChild(ship);
-  dragData.draggables.push(
-    {
-      isPlaced: false,
-      shipElementObject : ship,
-    }
-  );
+  dragData.draggables.push({
+    isPlaced: false,
+    shipElementObject: ship,
+  });
 }
 
-function bindEventListenerToShipSection(ship, shipNumber, shipSection, distanceFromMiddlePoint) {
+function bindEventListenerToShipSection(
+  ship,
+  shipNumber,
+  shipSection,
+  distanceFromMiddlePoint,
+) {
   shipSection.addEventListener("mousedown", () => {
     dragData.distanceFromMiddlePoint = distanceFromMiddlePoint;
     dragData.current = shipNumber;
     dragData.isThereAnElementGettingDragged = true;
   });
-  
 }
 
-document.addEventListener("mousedown", e => {
+document.addEventListener("mousedown", (e) => {
   dragData.startX = e.clientX;
   dragData.startY = e.clientY;
   console.log(dragData);
-})
+});
 
-document.addEventListener("mousemove", e => {
+document.addEventListener("mousemove", (e) => {
   if (dragData.isThereAnElementGettingDragged) {
     const ship = dragData.draggables[dragData.current].shipElementObject;
     let newX = dragData.startX - e.clientX;
@@ -88,6 +106,7 @@ document.addEventListener("mousemove", e => {
     dragData.startX = e.clientX;
     dragData.startY = e.clientY;
 
+    ship.style.display = "none";
     ship.style.left = `${ship.offsetLeft - newX}px`;
     ship.style.top = `${ship.offsetTop - newY}px`;
   }
@@ -100,10 +119,10 @@ document.addEventListener("mouseup", () => {
   dragData.startY = null;
 
   console.log(dragData);
-}); 
+});
 
+board.initGameBoard();
+board.printGameBoard();
+createShip(0, 1);
 
-
-createShip(0, 4);
-createShip(1, 2);
 createCells(cellContainer);
