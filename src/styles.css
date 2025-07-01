@@ -26,3 +26,7 @@
 .ship-section:hover {
   cursor: grab;
 }
+
+.hidden{
+  opacity: 0;
+}

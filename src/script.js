@@ -56,7 +56,6 @@ class GameBoard {
   #SHOT_MISSED = -2;
   #VALID_POSITION = -1;
   #INVALID_POSITION = 0;
-  #OCCUPIED_POSITION = 1;
   #MAX_SHIPS = 7;
   #destroyed_ships = [];
   #ships = [];
@@ -73,6 +72,7 @@ class GameBoard {
   ];
 
   initGameBoard(){
+
     this.resetGameBoard();
     this.getShips();
     
@@ -94,14 +94,6 @@ class GameBoard {
   };
 
   printGameBoard(){
-    // console.log();
-    // for(let i = 0; i < this.#GRID_SIZE; i++){
-    //   let temp = "";
-    //   for(let j = 0; j < this.#GRID_SIZE; j++){
-    //       temp += `${this.#grid[i][j]} `;
-    //   }
-    //   console.log(temp);
-    // }
     console.table(this.#grid);
   }
   
@@ -130,7 +122,7 @@ class GameBoard {
     for(let i = 0; i < this.#GRID_SIZE; i++){
       for(let j = 0; j < this.#GRID_SIZE; j++){
         const currentPosition = this.#grid[i][j];
-        if(currentPosition >= this.#OCCUPIED_POSITION) continue;
+        if(typeof currentPosition === "object") continue;
           
         if(this.isThereAShipInCellPerimeter(i, j)) this.#grid[i][j] = this.#INVALID_POSITION;
         else this.#grid[i][j] = this.#VALID_POSITION;
@@ -150,7 +142,7 @@ class GameBoard {
 
         const newJPosition = jPosition - j;
         if(!this.isDesiredPositionOutOfBounds(newIPosition, newJPosition)) continue;
-        if(this.#grid[newIPosition][newJPosition] >= this.#OCCUPIED_POSITION) return true;
+        if(typeof this.#grid[newIPosition][newJPosition] === "object"); return true;
     
       }
     }
@@ -162,9 +154,8 @@ class GameBoard {
     console.log(`position received ${iPosition}, ${jPosition}`);
     const ship = this.#ships[shipNumber];
     if(this.isDesiredPositionValid(ship, iPosition, jPosition)){
-      // this.placeShipHelper(ship, shipNumber, iPosition, jPosition);
+      this.placeShipHelper(ship, shipNumber, this.#grid, iPosition, jPosition);
       return true;
-
     };
 
     console.log("returning false");
@@ -173,35 +164,45 @@ class GameBoard {
   }
 
   placeShipDragOn(shipNumber, iPosition, jPosition){
+
     console.log(`position received ${iPosition}, ${jPosition}`);
     const ship = this.#ships[shipNumber];
+
     if(this.isDesiredPositionValid(ship, iPosition, jPosition)){
       const tempGrid = this.#grid.map(element => element.slice());
 
       this.placeShipHelper(ship, shipNumber, tempGrid, iPosition, jPosition);
       return tempGrid;
     };
+
     console.log("from psdo: fail");
     return null;
   }
 
   placeShipHelper(ship, shipNumber, grid, iPosition, jPosition){
+
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
     const shipStartingPosition = desiredPosition - ship.getStartOffSet();
     const shipEndingPosition = desiredPosition + ship.getEndOffSet();
 
+
     let n = shipStartingPosition;
     let adjustedShipNumber = shipNumber + 1;
+    let distanceFromMiddlePoint = Math.trunc(ship.getLength()/2);
 
     if (ship.horizontal) {
       for (; n <= shipEndingPosition; n++) {
-        grid[iPosition][n] = adjustedShipNumber;
+        grid[iPosition][n] = {adjustedShipNumber, distanceFromMiddlePoint};
+        distanceFromMiddlePoint--;
       }
-    } else {
-      for (; n <= shipEndingPosition; n++) {
-        grid[n][jPosition] = adjustedShipNumber;
-      }
+      return;
+    } 
+
+    for (; n <= shipEndingPosition; n++) {
+      grid[n][jPosition] = {adjustedShipNumber, distanceFromMiddlePoint};
+      distanceFromMiddlePoint -= 1;
     }
+    
   }
 
   isDesiredPositionValid = function (ship, iPosition, jPosition) {
@@ -268,11 +269,12 @@ class GameBoard {
       }
     }
     return true;
+    
   };
 
   receiveAttack(iPos, jPos){
 
-    if(this.#grid[iPos][jPos] >= this.#OCCUPIED_POSITION){
+    if(typeof this.#grid[iPos][jPos] === "object"){
       const shipNumber = this.#grid[iPos][jPos] - 1; // ADJUSTED FOR ARRAY INDEX MATCHING
       const attackedShip = this.#ships[shipNumber];
       attackedShip.hit();

@@ -13,12 +13,21 @@ const dragData = {
   distanceFromMiddlePoint: null,
   startX: null,
   startY: null,
+  iPosition: null,
+  jPosition: null,
+
+  getShip: function(){
+    if(this.current === null) return;
+    return this.draggables[this.current].shipElementObject;
+  },
+
 
 };
 
 const cell2dArray = [];
 
 // const shipSizes = [1, 1, 2, 2, 3, 3, 4];
+
 
 function renderOriginalGrid(){
   const grid = board.getGrid();
@@ -30,6 +39,7 @@ function renderOriginalGrid(){
     }
   }
 }
+
 function renderTempNewGrid(renderInstructions){
   
   for(let i = 0; i < 8; i++){
@@ -42,12 +52,14 @@ function renderTempNewGrid(renderInstructions){
 }
 
 function encodeToColor(input){
-  if(input >= 1)
+  if(typeof input === "object")
     return "green";
   
   return "white";
 }
+
 function createCells(parentElement) {
+
   for (let i = 0; i < GRID_SIZE; i++) {
     const tempArray = [];
     for (let j = 0; j < GRID_SIZE; j++) {
@@ -62,44 +74,38 @@ function createCells(parentElement) {
   }
 }
 
-function bindEventListenerToGridCell(cell, i, j) {
+function bindEventListenerToGridCell(cell, iPosition, jPosition) {
   let isShipOnTopOfCell = false;
+  
   cell.addEventListener("mouseenter", (e) => {
-    if (dragData.isThereAnElementGettingDragged) {
-      isShipOnTopOfCell = true;
-      const ship = dragData.draggables[dragData.current].shipElementObject;
-      console.log(`cell : ${i}, ${j}`);
-      let newJ = j + dragData.distanceFromMiddlePoint;
-      ship.style.opacity = "0";
-      console.log(newJ);
-      const renderInstructions = board.placeShipDragOn(dragData.current, i, newJ)
-      console.table(renderInstructions);
 
-      if(renderInstructions === null){
-        renderOriginalGrid();
-        return;
-      }
-      renderTempNewGrid(renderInstructions);  
-      board.printGameBoard();
-    }
+    if (!dragData.isThereAnElementGettingDragged) return;
+    console.log(`cell : ${iPosition}, ${jPosition}`);
+    isShipOnTopOfCell = true;
+    dragData.iPosition = iPosition;
+    dragData.jPosition = jPosition + dragData.distanceFromMiddlePoint;
+    const shipElementObject = dragData.getShip();
+    shipElementObject.classList.toggle("hidden");
+    const renderInstructions = board.placeShipDragOn(dragData.current, iPosition, dragData.jPosition);
+    console.table(renderInstructions);
+    renderInstructions === null ? renderOriginalGrid() : renderTempNewGrid(renderInstructions);  
+ 
   });
 
   cell.addEventListener("mouseout", (e) => {
-    if (dragData.isThereAnElementGettingDragged) {
-      isShipOnTopOfCell = false;
-      const ship = dragData.draggables[dragData.current].shipElementObject;
-      ship.style.opacity = "1";
+    if (!dragData.isThereAnElementGettingDragged) return;
 
-      renderOriginalGrid();
-    }
+    isShipOnTopOfCell = false;
+    dragData.getShip().classList.toggle("hidden");
+    renderOriginalGrid();
 
   });
 
   cell.addEventListener("mouseup", e => {
-    if(isShipOnTopOfCell){
+    if(!isShipOnTopOfCell) return;
 
-    }
-    
+    const ship = dragData.getShip();
+
   });
 }
 
