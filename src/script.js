@@ -7,6 +7,7 @@ class Ship {
   #endPoint = 0;
   #startOffSet = 0;
   #endOffSet = 0;
+  #currentPosition = { iPosition, jPosition };
 
   horizontal = true;
 
@@ -18,7 +19,6 @@ class Ship {
     this.#endPoint = this.#length - 1;
     this.#startOffSet = this.#startingPoint + this.#middlePoint;
     this.#endOffSet = this.#endPoint - this.#middlePoint;
-    
   }
 
   hit = function () {
@@ -37,16 +37,21 @@ class Ship {
     return this.#length;
   };
 
-  getStartOffSet = function(){
-    return this.#startOffSet
-  }
+  getStartOffSet = function () {
+    return this.#startOffSet;
+  };
 
-  getEndOffSet = function(){
-    return this.#endOffSet
-  }
+  getEndOffSet = function () {
+    return this.#endOffSet;
+  };
 
-  getMiddlePoint(){
+  getMiddlePoint() {
     return this.#middlePoint;
+  }
+
+  updateCurrentPosition(iPosition, jPosition) {
+    this.#currentPosition.iPosition = iPosition;
+    this.#currentPosition.jPosition = jPosition;
   }
 }
 
@@ -71,37 +76,35 @@ class GameBoard {
     [-1, -1, -1, -1, -1, -1, -1, -1],
   ];
 
-  initGameBoard(){
-
+  initGameBoard() {
     this.resetGameBoard();
     this.getShips();
-    
   }
 
-  resetGameBoard(){
-    for(let i = 0; i < this.#GRID_SIZE; i++){
-      for(let j = 0; j < this.#GRID_SIZE; j++){
+  resetGameBoard() {
+    for (let i = 0; i < this.#GRID_SIZE; i++) {
+      for (let j = 0; j < this.#GRID_SIZE; j++) {
         this.#grid[i][j] = this.#VALID_POSITION;
       }
     }
   }
 
-  getShips() {   
+  getShips() {
     const shipSizes = [4, 1, 2, 2, 3, 3, 4];
     for (let i = 0; i < this.#MAX_SHIPS; i++) {
       this.#ships.push(new Ship(shipSizes[i]));
     }
-  };
+  }
 
-  printGameBoard(){
+  printGameBoard() {
     console.table(this.#grid);
   }
-  
-  removeShip(shipData){
-    
+
+  removeShip(shipData) {
     const desiredPosition = shipData.ship.horizontal ? jPosition : iPosition;
 
-    const shipStartingPosition = desiredPosition - shipData.ship.getStartOffSet();
+    const shipStartingPosition =
+      desiredPosition - shipData.ship.getStartOffSet();
     const shipEndingPosition = desiredPosition + shipData.ship.getEndOffSet();
 
     let n = shipStartingPosition;
@@ -116,98 +119,95 @@ class GameBoard {
       }
     }
     return true;
-  };
+  }
 
-  refreshGameBoard = function(){  
-    for(let i = 0; i < this.#GRID_SIZE; i++){
-      for(let j = 0; j < this.#GRID_SIZE; j++){
+  refreshGameBoard = function () {
+    for (let i = 0; i < this.#GRID_SIZE; i++) {
+      for (let j = 0; j < this.#GRID_SIZE; j++) {
         const currentPosition = this.#grid[i][j];
-        if(typeof currentPosition === "object") continue;
-          
-        if(this.isThereAShipInCellPerimeter(i, j)) this.#grid[i][j] = this.#INVALID_POSITION;
+        if (typeof currentPosition === "object") continue;
+
+        if (this.isThereAShipInCellPerimeter(i, j))
+          this.#grid[i][j] = this.#INVALID_POSITION;
         else this.#grid[i][j] = this.#VALID_POSITION;
-    
       }
     }
-  }
-  
-  isThereAShipInCellPerimeter(iPosition, jPosition){
-    
-    for(let i = -1; i <= 1; i++){
+  };
 
+  isThereAShipInCellPerimeter(iPosition, jPosition) {
+    for (let i = -1; i <= 1; i++) {
       const newIPosition = iPosition - i;
-      if(!this.isDesiredPositionOutOfBounds(newIPosition, jPosition)) continue;
+      if (!this.isDesiredPositionNotOutOfBounds(newIPosition, jPosition))
+        continue;
 
-      for(let j = -1; j <= 1; j++){
-
+      for (let j = -1; j <= 1; j++) {
         const newJPosition = jPosition - j;
-        if(!this.isDesiredPositionOutOfBounds(newIPosition, newJPosition)) continue;
-        if(typeof this.#grid[newIPosition][newJPosition] === "object"); return true;
-    
+
+        if (!this.isDesiredPositionNotOutOfBounds(newIPosition, newJPosition))
+          continue;
+
+        if (typeof this.#grid[newIPosition][newJPosition] === "object") {
+          return true;
+        }
       }
     }
     return false;
   }
 
-  placeShip(shipNumber, iPosition, jPosition){  
-    
+  placeShipDropped(shipNumber, iPosition, jPosition) {
     console.log(`position received ${iPosition}, ${jPosition}`);
     const ship = this.#ships[shipNumber];
-    if(this.isDesiredPositionValid(ship, iPosition, jPosition)){
+    if (this.isDesiredPositionValid(ship, iPosition, jPosition)) {
       this.placeShipHelper(ship, shipNumber, this.#grid, iPosition, jPosition);
+      ship.updateCurrentPosition(iPosition, jPosition);
       return true;
-    };
+    }
 
     console.log("returning false");
     return false;
-    
   }
 
-  placeShipDragOn(shipNumber, iPosition, jPosition){
-
+  placeShipDragOn(shipNumber, iPosition, jPosition) {
     console.log(`position received ${iPosition}, ${jPosition}`);
     const ship = this.#ships[shipNumber];
 
-    if(this.isDesiredPositionValid(ship, iPosition, jPosition)){
-      const tempGrid = this.#grid.map(element => element.slice());
+    if (this.isDesiredPositionValid(ship, iPosition, jPosition)) {
+      const tempGrid = this.#grid.map((element) => element.slice());
 
       this.placeShipHelper(ship, shipNumber, tempGrid, iPosition, jPosition);
       return tempGrid;
-    };
+    }
 
     console.log("from psdo: fail");
     return null;
   }
 
-  placeShipHelper(ship, shipNumber, grid, iPosition, jPosition){
-
+  placeShipHelper(ship, shipNumber, grid, iPosition, jPosition) {
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
     const shipStartingPosition = desiredPosition - ship.getStartOffSet();
     const shipEndingPosition = desiredPosition + ship.getEndOffSet();
 
-
     let n = shipStartingPosition;
     let adjustedShipNumber = shipNumber + 1;
-    let distanceFromMiddlePoint = Math.trunc(ship.getLength()/2);
+    let distanceFromMiddlePoint = Math.trunc(ship.getLength() / 2);
 
     if (ship.horizontal) {
       for (; n <= shipEndingPosition; n++) {
-        grid[iPosition][n] = {adjustedShipNumber, distanceFromMiddlePoint};
+        grid[iPosition][n] = { adjustedShipNumber, distanceFromMiddlePoint };
         distanceFromMiddlePoint--;
       }
       return;
-    } 
+    }
 
     for (; n <= shipEndingPosition; n++) {
-      grid[n][jPosition] = {adjustedShipNumber, distanceFromMiddlePoint};
+      grid[n][jPosition] = { adjustedShipNumber, distanceFromMiddlePoint };
       distanceFromMiddlePoint -= 1;
     }
-    
   }
 
   isDesiredPositionValid = function (ship, iPosition, jPosition) {
     if (
-      this.isDesiredPositionOutOfBounds(iPosition, jPosition) &&
+      this.isDesiredPositionNotOutOfBounds(iPosition, jPosition) &&
       this.isDesiredPositionAvailable(iPosition, jPosition) &&
       this.doesTheShipFitInTheDesiredPosition(ship, iPosition, jPosition) &&
       this.areThereShipCollisions(ship, iPosition, jPosition)
@@ -218,7 +218,7 @@ class GameBoard {
     return false;
   };
 
-  isDesiredPositionOutOfBounds = function (iPosition, jPosition) {
+  isDesiredPositionNotOutOfBounds = function (iPosition, jPosition) {
     if (
       iPosition >= this.#GRID_SIZE ||
       jPosition >= this.#GRID_SIZE ||
@@ -238,7 +238,6 @@ class GameBoard {
   };
 
   doesTheShipFitInTheDesiredPosition = function (ship, iPosition, jPosition) {
-
     const desiredPosition = ship.horizontal ? jPosition : iPosition;
 
     if (
@@ -269,45 +268,52 @@ class GameBoard {
       }
     }
     return true;
-    
   };
 
-  receiveAttack(iPos, jPos){
-
-    if(typeof this.#grid[iPos][jPos] === "object"){
+  receiveAttack(iPos, jPos) {
+    if (typeof this.#grid[iPos][jPos] === "object") {
       const shipNumber = this.#grid[iPos][jPos] - 1; // ADJUSTED FOR ARRAY INDEX MATCHING
       const attackedShip = this.#ships[shipNumber];
       attackedShip.hit();
-      this.#grid[iPos][jPos] = this.#SHOT_HIT; 
+      this.#grid[iPos][jPos] = this.#SHOT_HIT;
       return; // should be an object for front end synchronization
     }
-    
-    if(this.#grid[iPos][jPos] === this.#VALID_POSITION || this.#grid[iPos][jPos] === this.#INVALID_POSITION){
+
+    if (
+      this.#grid[iPos][jPos] === this.#VALID_POSITION ||
+      this.#grid[iPos][jPos] === this.#INVALID_POSITION
+    ) {
       this.#grid[iPos][jPos] = this.#SHOT_MISSED;
       return;
     }
   }
 
-  getDestroyedShips(){
+  getDestroyedShips() {
     return this.#destroyed_ships;
   }
 
-  getShipData(){
+  getShipData() {
     return this.#ships;
   }
 
-  getGrid(){
+  getGrid() {
     return this.#grid;
   }
 
+  getPositionData(iPosition, jPosition) {
+    const grid = this.getGrid();
+
+    const positionData = grid[iPosition][jPosition];
+
+    const obj = {};
+
+    if (typeof positionData === "object") {
+      obj.positionOccupied = true;
+      positionData.s;
+    }
+  }
 }
 
 const board = new GameBoard();
-board.initGameBoard();
-board.placeShip(0, 0, 0);
-board.receiveAttack(0, 0);
-board.receiveAttack(1, 0);
 
-export{
-  board  
-}
+export { board };
