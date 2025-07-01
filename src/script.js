@@ -7,7 +7,7 @@ class Ship {
   #endPoint = 0;
   #startOffSet = 0;
   #endOffSet = 0;
-  #currentPosition = { iPosition, jPosition };
+  #currentPosition = {iPosition : null, jPosition: null};
 
   horizontal = true;
 
@@ -53,27 +53,37 @@ class Ship {
     this.#currentPosition.iPosition = iPosition;
     this.#currentPosition.jPosition = jPosition;
   }
+
+  getCurrentIPosition(){
+    return this.#currentPosition.iPosition;
+
+  }
+
+  getCurrentJPosition(){
+    return this.#currentPosition.jPosition;
+    
+  }
 }
 
 class GameBoard {
   #GRID_SIZE = 8;
-  #SHOT_HIT = -3;
-  #SHOT_MISSED = -2;
-  #VALID_POSITION = -1;
-  #INVALID_POSITION = 0;
+  #SHOT_HIT = -4;
+  #SHOT_MISSED = -3;
+  #VALID_POSITION = -2;
+  #INVALID_POSITION = -1;
   #MAX_SHIPS = 7;
   #destroyed_ships = [];
   #ships = [];
 
   #grid = [
-    [-1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, 1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
+    [-2, 1, -2, -2, -2, -2, -2, -2],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
+    [-2, -2, -2, -2, -2, -2, -2, -2],
   ];
 
   initGameBoard() {
@@ -100,25 +110,28 @@ class GameBoard {
     console.table(this.#grid);
   }
 
-  removeShip(shipData) {
-    const desiredPosition = shipData.ship.horizontal ? jPosition : iPosition;
+  removeShipDragOn(shipNumber) {
+    const ship = this.#ships[shipNumber];
+    const desiredPosition = ship.horizontal ? ship.getCurrentJPosition() : ship.getCurrentIPosition();
+    console.log(ship);
+    console.log(desiredPosition);
 
     const shipStartingPosition =
-      desiredPosition - shipData.ship.getStartOffSet();
-    const shipEndingPosition = desiredPosition + shipData.ship.getEndOffSet();
+      desiredPosition - ship.getStartOffSet();
+    const shipEndingPosition = desiredPosition + ship.getEndOffSet();
 
     let n = shipStartingPosition;
 
-    if (shipData.ship.horizontal) {
+    if (ship.horizontal) {
       for (; n <= shipEndingPosition; n++) {
-        this.#grid[shipData.iPosition][n] = this.#VALID_POSITION;
+        this.#grid[ship.getCurrentIPosition()][n] = this.#VALID_POSITION;
       }
     } else {
       for (; n <= shipEndingPosition; n++) {
-        this.#grid[n][shipData.jPosition] = this.#VALID_POSITION;
+        this.#grid[n][ship.getCurrentJPosition()] = this.#VALID_POSITION;
       }
     }
-    return true;
+
   }
 
   refreshGameBoard = function () {
@@ -129,7 +142,8 @@ class GameBoard {
 
         if (this.isThereAShipInCellPerimeter(i, j))
           this.#grid[i][j] = this.#INVALID_POSITION;
-        else this.#grid[i][j] = this.#VALID_POSITION;
+        else 
+          this.#grid[i][j] = this.#VALID_POSITION;
       }
     }
   };
@@ -188,19 +202,18 @@ class GameBoard {
     const shipEndingPosition = desiredPosition + ship.getEndOffSet();
 
     let n = shipStartingPosition;
-    let adjustedShipNumber = shipNumber + 1;
     let distanceFromMiddlePoint = Math.trunc(ship.getLength() / 2);
 
     if (ship.horizontal) {
       for (; n <= shipEndingPosition; n++) {
-        grid[iPosition][n] = { adjustedShipNumber, distanceFromMiddlePoint };
+        grid[iPosition][n] = {shipNumber, distanceFromMiddlePoint };
         distanceFromMiddlePoint--;
       }
       return;
     }
 
     for (; n <= shipEndingPosition; n++) {
-      grid[n][jPosition] = { adjustedShipNumber, distanceFromMiddlePoint };
+      grid[n][jPosition] = {shipNumber, distanceFromMiddlePoint };
       distanceFromMiddlePoint -= 1;
     }
   }
@@ -302,15 +315,16 @@ class GameBoard {
 
   getPositionData(iPosition, jPosition) {
     const grid = this.getGrid();
-
     const positionData = grid[iPosition][jPosition];
-
-    const obj = {};
+    const obj = {positionOccupied: false};
 
     if (typeof positionData === "object") {
       obj.positionOccupied = true;
-      positionData.s;
+      obj.shipNumber = positionData.shipNumber;
+      obj.distanceFromMiddlePoint = positionData.distanceFromMiddlePoint;
     }
+
+    return obj;
   }
 }
 

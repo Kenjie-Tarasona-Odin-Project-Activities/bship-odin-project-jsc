@@ -48,7 +48,7 @@ function renderTempNewGrid(renderInstructions) {
 
 function encodeToColor(input) {
   if (typeof input === "object") return "green";
-  if (input === 0) return "red";
+  if (input === -1) return "red";
   return "white";
 }
 
@@ -77,7 +77,7 @@ function bindEventListenerToGridCell(cell, iPosition, jPosition) {
     dragData.iPosition = iPosition;
     dragData.jPosition = jPosition + dragData.distanceFromMiddlePoint;
     const shipElementObject = dragData.getShip();
-    shipElementObject.classList.toggle("hidden");
+    shipElementObject.style.visibility = "hidden";
     const renderInstructions = board.placeShipDragOn(
       dragData.current,
       dragData.iPosition,
@@ -93,12 +93,15 @@ function bindEventListenerToGridCell(cell, iPosition, jPosition) {
     if (!dragData.isThereAnElementGettingDragged) return;
 
     isShipOnTopOfCell = false;
-    dragData.getShip().classList.toggle("hidden");
+    dragData.getShip().style.visibility = "visible";
     renderOriginalGrid();
   });
 
   cell.addEventListener("mouseup", (e) => {
     if (!isShipOnTopOfCell) return;
+
+    dragData.iPosition = iPosition;
+    dragData.jPosition = jPosition + dragData.distanceFromMiddlePoint;
 
     board.placeShipDropped(
       dragData.current,
@@ -110,6 +113,20 @@ function bindEventListenerToGridCell(cell, iPosition, jPosition) {
 
     renderOriginalGrid();
   });
+
+  cell.addEventListener("mousedown", () => {
+  
+    const positionData = board.getPositionData(iPosition, jPosition); 
+    if(!positionData.positionOccupied) return;
+    dragData.isThereAnElementGettingDragged = true;
+    dragData.current = positionData.shipNumber;
+    dragData.distanceFromMiddlePoint = positionData.distanceFromMiddlePoint;
+    board.removeShipDragOn(dragData.current);
+    board.refreshGameBoard();
+    renderOriginalGrid();
+    board.printGameBoard();
+  });
+
 }
 
 function createShip(shipNumber, shipLength) {
@@ -158,18 +175,17 @@ document.addEventListener("mousedown", (e) => {
 });
 
 document.addEventListener("mousemove", (e) => {
-  if (dragData.isThereAnElementGettingDragged) {
-    const ship = dragData.draggables[dragData.current].shipElementObject;
-    let newX = dragData.startX - e.clientX;
-    let newY = dragData.startY - e.clientY;
+  if (!dragData.isThereAnElementGettingDragged) return;
+  const ship = dragData.draggables[dragData.current].shipElementObject;
+  let newX = dragData.startX - e.clientX;
+  let newY = dragData.startY - e.clientY;
 
-    dragData.isShipOnTopOfCell = true;
-    dragData.startX = e.clientX;
-    dragData.startY = e.clientY;
+  dragData.startX = e.clientX;
+  dragData.startY = e.clientY;
 
-    ship.style.left = `${ship.offsetLeft - newX}px`;
-    ship.style.top = `${ship.offsetTop - newY}px`;
-  }
+  ship.style.left = `${ship.offsetLeft - newX}px`;
+  ship.style.top = `${ship.offsetTop - newY}px`;
+  
 });
 
 document.addEventListener("mouseup", () => {
@@ -182,5 +198,6 @@ document.addEventListener("mouseup", () => {
 board.initGameBoard();
 board.printGameBoard();
 createShip(0, 4);
+createShip(1, 1);
 
 createCells(cellContainer);
