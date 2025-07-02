@@ -17,7 +17,7 @@ const dragData = {
 
   getShip: function () {
     if (this.current === null) return;
-    return this.draggables[this.current].shipElementObject;
+    return this.draggables[this.current];
   },
 };
 
@@ -138,35 +138,29 @@ function createShip(shipNumber, shipLength) {
     const shipSection = document.createElement("div");
     shipSection.classList.add("ship-section");
 
-    bindEventListenerToShipSection(
-      ship,
-      shipNumber,
-      shipSection,
-      distanceFromMiddlePoint,
-    );
+    bindEventListenerToShipSection(shipNumber, shipSection, distanceFromMiddlePoint);
     distanceFromMiddlePoint -= 1;
-
     ship.appendChild(shipSection);
+
   }
 
   body.appendChild(ship);
-  dragData.draggables.push({
-    isPlaced: false,
-    shipElementObject: ship,
-  });
+  dragData.draggables.push(ship);
+
 }
 
-function bindEventListenerToShipSection(
-  ship,
-  shipNumber,
-  shipSection,
-  distanceFromMiddlePoint,
-) {
+function bindEventListenerToShipSection(shipNumber, shipSection, distanceFromMiddlePoint) {
   shipSection.addEventListener("mousedown", () => {
     dragData.distanceFromMiddlePoint = distanceFromMiddlePoint;
     dragData.current = shipNumber;
     dragData.isThereAnElementGettingDragged = true;
   });
+}
+
+function removeShipElementObjectWhenPlaced(parentElement, shipElement){
+
+  parentElement.removeChild(shipElement);
+
 }
 
 document.addEventListener("mousedown", (e) => {
@@ -176,7 +170,8 @@ document.addEventListener("mousedown", (e) => {
 
 document.addEventListener("mousemove", (e) => {
   if (!dragData.isThereAnElementGettingDragged) return;
-  const ship = dragData.draggables[dragData.current].shipElementObject;
+  const ship = dragData.getShip()
+
   let newX = dragData.startX - e.clientX;
   let newY = dragData.startY - e.clientY;
 

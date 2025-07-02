@@ -209,12 +209,11 @@ class GameBoard {
         grid[iPosition][n] = {shipNumber, distanceFromMiddlePoint };
         distanceFromMiddlePoint--;
       }
-      return;
-    }
-
-    for (; n <= shipEndingPosition; n++) {
-      grid[n][jPosition] = {shipNumber, distanceFromMiddlePoint };
-      distanceFromMiddlePoint -= 1;
+    }else{
+      for (; n <= shipEndingPosition; n++) {
+        grid[n][jPosition] = {shipNumber, distanceFromMiddlePoint };
+        distanceFromMiddlePoint -= 1;
+      }
     }
   }
 
@@ -325,6 +324,10 @@ class GameBoard {
     }
 
     return obj;
+  }
+
+  rotateShip(shipNumber){
+    
   }
 }
 
