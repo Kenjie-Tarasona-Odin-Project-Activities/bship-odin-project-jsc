@@ -58,7 +58,7 @@ class GameBoard {
   #destroyed_ships = [];
   #ships = [];
   #tempGrid = null;
-  #gridCopy = null;
+  #gridWhereTheSelectedShipIsRemoved = null;
 
   #grid = [
     [-2, -2, -2, -2, -2, -2, -2, -2],
@@ -101,19 +101,19 @@ class GameBoard {
 
     let n = shipStartingPosition;
     
-    this.#gridCopy = this.copyOriginalGrid();
+    this.#gridWhereTheSelectedShipIsRemoved = this.copyOriginalGrid();
 
     if (ship.horizontal) {
       for (; n <= shipEndingPosition; n++) {
-        this.#gridCopy[iPosition][n] = this.#VALID_POSITION;
+        this.#gridWhereTheSelectedShipIsRemoved[iPosition][n] = this.#VALID_POSITION;
       }
     } else {
       for (; n <= shipEndingPosition; n++) {
-        this.#gridCopy[n][jPosition] = this.#VALID_POSITION;
+        this.#gridWhereTheSelectedShipIsRemoved[n][jPosition] = this.#VALID_POSITION;
       }
     }
 
-    this.refreshGameBoard(this.#gridCopy);
+    this.refreshGameBoard(this.#gridWhereTheSelectedShipIsRemoved);
   }
 
   refreshGameBoard(grid) {
@@ -157,7 +157,6 @@ class GameBoard {
     if (this.isDesiredPositionValid(ship, iPosition, jPosition, this.#tempGrid)) {
       this.placeShipHelper(ship, shipNumber, this.#tempGrid, iPosition, jPosition);
       this.refreshGameBoard(this.#tempGrid); 
-      console.table(this.#tempGrid);
       return true;
     }
 
@@ -188,7 +187,8 @@ class GameBoard {
 
   movePlacedShip(shipNumber, iPosition, jPosition){
 
-    this.#tempGrid = this.#gridCopy.map((element) => element.slice());
+    this.#tempGrid = this.copyGridWhereTheSelectedShipIsRemoved();
+
     const ship = this.getShip(shipNumber);
 
     if (this.isDesiredPositionValid(ship, iPosition, jPosition, this.#tempGrid)) {
@@ -284,12 +284,17 @@ class GameBoard {
 
     this.#grid = this.#tempGrid;
     this.#tempGrid = null;
-    this.#gridCopy = null;
+    this.#gridWhereTheSelectedShipIsRemoved = null;
 
   }
 
   copyOriginalGrid(){
     const tempGrid = this.#grid.map((element) => element.slice());
+    return tempGrid;
+  }
+
+  copyGridWhereTheSelectedShipIsRemoved(){
+    const tempGrid = this.#gridWhereTheSelectedShipIsRemoved.map((element) => element.slice());
     return tempGrid;
   }
 
@@ -309,8 +314,8 @@ class GameBoard {
     return this.#tempGrid;
   }
 
-  getGridCopy(){
-    return this.#gridCopy;
+  getGridWhereTheSelectedShipIsRemoved(){
+    return this.#gridWhereTheSelectedShipIsRemoved;
   }
 
   getPositionData(iPosition, jPosition) {
@@ -321,7 +326,17 @@ class GameBoard {
     positionData.isHorizontal = ship.getOrientation();
 
     return positionData;
-    
+  }
+
+  rotatePlacedShip(shipNumber, iPosition, jPosition){
+    console.log(`from rotatePlacedShip iPosition: ${iPosition} jPosition: ${jPosition}`);
+    const ship = this.getShip(shipNumber);
+    ship.rotate();
+    const isPlaced = this.movePlacedShip(shipNumber, iPosition, jPosition);
+    if(!isPlaced) ship.rotate();
+    console.table(this.getTempGrid());
+    return isPlaced;
+
   }
 }
 
