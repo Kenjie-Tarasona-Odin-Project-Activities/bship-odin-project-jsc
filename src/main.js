@@ -7,39 +7,29 @@ const body = document.querySelector("body");
 
 const dragData = {
   draggables: [],
-  isThereAnElementGettingDragged: false,
-  current: null,
+  unplacedShipGettingDragged: false,
+  placedShipGettingDragged: false,
+  shipNumber: null,
   distanceFromMiddlePoint: null,
   startX: null,
   startY: null,
   iPosition: null,
   jPosition: null,
+  outsideGrid: false,
+  isHorizontal: true,
 
   getShip: function () {
-    if (this.current === null) return;
-    return this.draggables[this.current];
+    if (this.shipNumber === null) return;
+    return this.draggables[this.shipNumber];
   },
 };
 
 const cell2dArray = [];
 
-// const shipSizes = [1, 1, 2, 2, 3, 3, 4];
-
-function renderOriginalGrid() {
-  const grid = board.getGrid();
+function renderGrid(grid) {
   for (let i = 0; i < 8; i++) {
     for (let j = 0; j < 8; j++) {
       const color = encodeToColor(grid[i][j]);
-      const cell = cell2dArray[i][j];
-      cell.style.background = color;
-    }
-  }
-}
-
-function renderTempNewGrid(renderInstructions) {
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      const color = encodeToColor(renderInstructions[i][j]);
       const cell = cell2dArray[i][j];
       cell.style.background = color;
     }
@@ -68,65 +58,81 @@ function createCells(parentElement) {
 }
 
 function bindEventListenerToGridCell(cell, iPosition, jPosition) {
-  let isShipOnTopOfCell = false;
+  let isPlaced = false;
 
-  cell.addEventListener("mouseenter", (e) => {
-    if (!dragData.isThereAnElementGettingDragged) return;
-    console.log(`cell : ${iPosition}, ${jPosition}`);
-    isShipOnTopOfCell = true;
-    dragData.iPosition = iPosition;
-    dragData.jPosition = jPosition + dragData.distanceFromMiddlePoint;
-    const shipElementObject = dragData.getShip();
-    shipElementObject.style.visibility = "hidden";
-    const renderInstructions = board.placeShipDragOn(
-      dragData.current,
-      dragData.iPosition,
-      dragData.jPosition,
-    );
-    console.table(renderInstructions);
-    renderInstructions === null
-      ? renderOriginalGrid()
-      : renderTempNewGrid(renderInstructions);
+  cell.addEventListener("mouseenter", () => {
+
+    if (dragData.unplacedShipGettingDragged){
+      dragData.getShip().style.visibility = "hidden";
+      isPlaced = board.placeShip(dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint);
+      isPlaced ? renderGrid(board.getTempGrid()) : renderGrid(board.getGrid());
+      return;
+    };
+
+    if(dragData.placedShipGettingDragged){
+      // Update for ship rotation
+      dragData.outsideGrid = false;
+      isPlaced = board.movePlacedShip(dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint);
+      isPlaced ? renderGrid(board.getTempGrid()) : renderGrid(board.getGridCopy());
+      return;
+    }
+
   });
 
-  cell.addEventListener("mouseout", (e) => {
-    if (!dragData.isThereAnElementGettingDragged) return;
+  cell.addEventListener("mouseout", () => {
 
-    isShipOnTopOfCell = false;
-    dragData.getShip().style.visibility = "visible";
-    renderOriginalGrid();
+    if(dragData.unplacedShipGettingDragged){
+      dragData.getShip().style.visibility = "visible";
+      renderGrid(board.getGrid());
+      return;
+    }
+
+    if(dragData.placedShipGettingDragged){
+      dragData.outsideGrid = true;
+      renderGrid(board.getGridCopy());
+    }
+
   });
 
-  cell.addEventListener("mouseup", (e) => {
-    if (!isShipOnTopOfCell) return;
+  cell.addEventListener("mouseup", () => {
 
-    dragData.iPosition = iPosition;
-    dragData.jPosition = jPosition + dragData.distanceFromMiddlePoint;
-
-    board.placeShipDropped(
-      dragData.current,
-      dragData.iPosition,
-      dragData.jPosition,
-    );
-    board.refreshGameBoard();
-    board.printGameBoard();
-
-    renderOriginalGrid();
-  });
-
-  cell.addEventListener("mousedown", () => {
   
-    const positionData = board.getPositionData(iPosition, jPosition); 
-    if(!positionData.positionOccupied) return;
-    dragData.isThereAnElementGettingDragged = true;
-    dragData.current = positionData.shipNumber;
-    dragData.distanceFromMiddlePoint = positionData.distanceFromMiddlePoint;
-    board.removeShipDragOn(dragData.current);
-    board.refreshGameBoard();
-    renderOriginalGrid();
-    board.printGameBoard();
+    if(!isPlaced){
+      renderGrid(board.getGrid());
+      return;
+    } 
+
+    // picking up and placing at the same place triggers rotation
+    if(iPosition === dragData.iPosition && jPosition === dragData.jPosition){
+      console.log("trigger rotation");
+      return;  
+    }
+
+    if(dragData.unplacedShipGettingDragged || dragData.placedShipGettingDragged){
+      board.updateGrid();
+      return;
+    }
+
   });
 
+  // for picking up placed ship
+  cell.addEventListener("mousedown", () => {
+
+    const positionData = board.getPositionData(iPosition, jPosition);
+    if(positionData === null) return;
+    dragData.placedShipGettingDragged = true;
+    dragData.shipNumber = positionData.shipNumber;
+    dragData.distanceFromMiddlePoint = positionData.distanceFromMiddlePoint;
+    dragData.isHorizontal = positionData.isHorizontal;
+    dragData.iPosition = iPosition;
+    dragData.jPosition = jPosition;
+    dragData.isHorizontal = positionData.isHorizontal;
+    console.log(dragData.isHorizontal);
+    
+    //change for orientation
+    board.removeShip(dragData.shipNumber, iPosition, jPosition + dragData. distanceFromMiddlePoint);
+
+  });
 }
 
 function createShip(shipNumber, shipLength) {
@@ -150,26 +156,19 @@ function createShip(shipNumber, shipLength) {
 }
 
 function bindEventListenerToShipSection(shipNumber, shipSection, distanceFromMiddlePoint) {
-  shipSection.addEventListener("mousedown", () => {
+  shipSection.addEventListener("mousedown", e => {
+    dragData.unplacedShipGettingDragged = true;
     dragData.distanceFromMiddlePoint = distanceFromMiddlePoint;
-    dragData.current = shipNumber;
-    dragData.isThereAnElementGettingDragged = true;
+    dragData.shipNumber = shipNumber;
+    dragData.startX = e.clientX;
+    dragData.startY = e.clientY;
+    document.addEventListener("mouseup", resetDragData);
   });
+  
 }
 
-function removeShipElementObjectWhenPlaced(parentElement, shipElement){
-
-  parentElement.removeChild(shipElement);
-
-}
-
-document.addEventListener("mousedown", (e) => {
-  dragData.startX = e.clientX;
-  dragData.startY = e.clientY;
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (!dragData.isThereAnElementGettingDragged) return;
+document.addEventListener("mousemove", e => {
+  if (!dragData.unplacedShipGettingDragged) return;
   const ship = dragData.getShip()
 
   let newX = dragData.startX - e.clientX;
@@ -183,16 +182,21 @@ document.addEventListener("mousemove", (e) => {
   
 });
 
-document.addEventListener("mouseup", () => {
-  dragData.isThereAnElementGettingDragged = false;
-  dragData.current = null;
+function resetDragData(){
+
+  if(dragData.placedShipGettingDragged && dragData.outsideGrid){
+    renderGrid(board.getGrid());
+  }
+
+  dragData.unplacedShipGettingDragged = false;
+  dragData.placedShipGettingDragged = false;
+  dragData.shipNumber = null;
   dragData.startX = null;
   dragData.startY = null;
-});
+  dragData.isHorizontal = true;
+}
 
 board.initGameBoard();
-board.printGameBoard();
 createShip(0, 4);
 createShip(1, 1);
-
 createCells(cellContainer);
