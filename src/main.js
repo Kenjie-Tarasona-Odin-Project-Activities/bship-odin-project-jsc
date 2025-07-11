@@ -1,5 +1,6 @@
 import "./styles.css";
 import { board } from "./script.js";
+import {Game} from "./gameLoop.js";
 
 const GRID_SIZE = 8;
 const cellContainer = document.querySelector(".cell-container");
@@ -74,7 +75,10 @@ function bindEventListenerToGridCell(cell, iPosition, jPosition) {
       // Update for ship rotation
       console.log("placed");
       dragData.outsideGrid = false;
-      isPlaced = board.movePlacedShip(dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint);
+      isPlaced = dragData.isHorizontal ? 
+      board.movePlacedShip(dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint) :
+      board.movePlacedShip(dragData.shipNumber, iPosition + dragData.distanceFromMiddlePoint, jPosition);
+
       isPlaced ? renderGrid(board.getTempGrid()) : renderGrid(board.getGridWhereTheSelectedShipIsRemoved());
       return;
     }
@@ -143,9 +147,6 @@ function bindEventListenerToGridCell(cell, iPosition, jPosition) {
     dragData.jPosition = jPosition;
     dragData.isHorizontal = positionData.isHorizontal;
 
-    // console.log(dragData.distanceFromMiddlePoint);
-    // console.log(dragData.isHorizontal);
-    //change for orientation
     if(positionData.isHorizontal)
       board.removeShip(dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint);
     else
@@ -218,3 +219,15 @@ board.initGameBoard();
 createShip(0, 4);
 createShip(1, 1);
 createCells(cellContainer);
+
+const game = new Game();
+
+game.start();
+const test = game.request({
+  user: 0,
+  type: "placement",
+  request: "placeship",
+  parameters: [0, 4, 4],
+}); 
+
+console.log(test);
