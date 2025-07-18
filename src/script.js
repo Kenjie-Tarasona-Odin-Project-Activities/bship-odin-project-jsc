@@ -209,8 +209,8 @@ class GameBoard {
       this.#locked = true;
       return true;
     }
-
-    return false
+    console.log(this.#placed_ships);
+    return false;
 
   }
 
@@ -272,7 +272,7 @@ class GameBoard {
   }
 
   getShips() {
-    const shipSizes = [4, 1, 2, 2, 3, 3, 4];
+    const shipSizes = [1, 1, 2, 2, 3, 3, 4];
     for (let i = 0; i < this.#MAX_SHIPS; i++) {
       this.#ships.push(new Ship(shipSizes[i]));
     }
@@ -320,7 +320,7 @@ class GameBoard {
         
         const current = grid[i][j];
         if(typeof current !== "object") continue;
-        if(this.#placed_ships.includes(current.shipNumber)) return;
+        if(this.#placed_ships.includes(current.shipNumber)) continue;
         this.#placed_ships.push(current.shipNumber);
       }
     }
@@ -328,7 +328,7 @@ class GameBoard {
   }
 
   areAllTheShipsPlaced(){
-    if(this.#placed_ships === this.#MAX_SHIPS) return true;
+    if(this.#placed_ships.length === this.#MAX_SHIPS) return true;
     return false;
   }
 
@@ -397,27 +397,25 @@ class GameBoard {
 
 
   // UNFINISHED // 
-  receiveAttack(iPos, jPos) {
-    if (typeof this.#grid[iPos][jPos] === "object") {
-      const shipNumber = this.#grid[iPos][jPos] - 1; // ADJUSTED FOR ARRAY INDEX MATCHING
-      const attackedShip = this.#ships[shipNumber];
-      attackedShip.hit();
-      this.#grid[iPos][jPos] = this.#SHOT_HIT;
-      return; // should be an object for front end synchronization
+  receiveAttack(iPosition, jPosition) {
+    const positionData = this.#grid[iPosition][jPosition];
+
+    if(typeof positionData === "object"){
+      const ship = this.getShip(positionData.shipNumber);
+      ship.hit();
+      if(ship.isDestroyed()){
+        this.#destroyed_ships.push(positionData.shipNumber);
+      }
+      this.#grid[iPosition][jPosition] = this.#SHOT_HIT;
+      return true;
     }
 
-    if (
-      this.#grid[iPos][jPos] === this.#VALID_POSITION ||
-      this.#grid[iPos][jPos] === this.#INVALID_POSITION
-    ) {
-      this.#grid[iPos][jPos] = this.#SHOT_MISSED;
-      return;
+    if(positionData === this.#INVALID_POSITION || positionData === this.#VALID_POSITION){
+      this.#grid[iPosition][jPosition] = this.#SHOT_MISSED;
+      return true; 
     }
-  }
 
-  // TEST //
-  test(var1, var2, var3){
-    return `from test: ${var1}, ${var2}, ${var3}  is received`;
+    return false;
   }
 }
 
@@ -434,6 +432,7 @@ class Player {
   }
 
 }
+
 
 const board = new GameBoard();
 

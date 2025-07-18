@@ -27,7 +27,7 @@ class Game {
 
         if(!this.#gameStart) return;
         if(payload === null) return;
-        if(payload.user !== this.#currentPlayerPlacing);
+        if(payload.user !== this.#currentPlayerPlacing) return;
 
         const caller = this.#players[payload.user].getGameBoard();
 
@@ -58,6 +58,7 @@ class Game {
                 if(this.#currentPlayerPlacing === 1) this.#placementMode = false;
                 
                 this.#currentPlayerPlacing = 1;
+                console.log(this.#currentPlayerPlacing);
                 return true;
 
             case "placeShip":
@@ -78,6 +79,9 @@ class Game {
 
             case "updateGrid":
                 return caller.updateGrid(...parameters);
+
+            case "test":
+                return caller.test(...parameters);
         }
     }
 
