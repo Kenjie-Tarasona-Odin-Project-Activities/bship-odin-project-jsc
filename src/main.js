@@ -61,7 +61,34 @@ class GRID_UI{
     main.appendChild(this.playerContainer);
 
   }
- 
+
+  detachAllListeners(){
+    
+    for(let i = 0; i < this.GRID_SIZE; i++){
+      for(let j = 0; j < this.GRID_SIZE; j++){
+
+        const cell = this.cell2dArray[i][j];
+        const handlers = this.cellHandlerReferences[i][j];
+        cell.removeEventListener("mouseenter", handlers[0]);
+        cell.removeEventListener("mouseout", handlers[1]);
+        cell.removeEventListener("mouseup", handlers[2]);
+        cell.removeEventListener("mousedown", handlers[3]);
+
+      }
+    }
+
+    // console.log(this.shipSectionNodes);
+
+    for(let i = 0; i < this.shipSectionNodes.length; i++){
+      const shipSection = this.shipSectionNodes[i];
+      console.log(shipSection);
+    
+      const handler = this.shipSectionHandlerReferences[i];
+      shipSection.removeEventListener("mousedown", handler);
+    }
+
+  }
+
   createCells(){
     for (let i = 0; i < this.GRID_SIZE; i++) {
       const tempArray = [];
@@ -374,6 +401,8 @@ class GRID_UI{
 
   }
 
+
+
 }
 
 function encodeToColor(input) {
@@ -437,6 +466,7 @@ lock.addEventListener("click", () => {
     console.log("lock successful");
     grid.clearGrid();
     grid.restoreShipPositions();
+    grid.detachAllListeners();
     return;
   }
 
