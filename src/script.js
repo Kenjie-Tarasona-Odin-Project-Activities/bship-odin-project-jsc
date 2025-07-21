@@ -332,6 +332,11 @@ class GameBoard {
     return false;
   }
 
+  getDestroyedShipsCount(){
+    return this.#destroyed_ships.length;
+  }
+
+
   // INTERNAL POSITION VALIDATORS //
 
   isDesiredPositionValid(ship, iPosition, jPosition, grid) {
@@ -395,8 +400,10 @@ class GameBoard {
     return true;
   };
 
+  //invalid return 0
+  //hit return 1 
+  //miss return 2
 
-  // UNFINISHED // 
   receiveAttack(iPosition, jPosition) {
     const positionData = this.#grid[iPosition][jPosition];
 
@@ -407,15 +414,16 @@ class GameBoard {
         this.#destroyed_ships.push(positionData.shipNumber);
       }
       this.#grid[iPosition][jPosition] = this.#SHOT_HIT;
-      return true;
+      return 1;
     }
+
 
     if(positionData === this.#INVALID_POSITION || positionData === this.#VALID_POSITION){
       this.#grid[iPosition][jPosition] = this.#SHOT_MISSED;
-      return true; 
+      return 2; 
     }
 
-    return false;
+    return 0;
   }
 }
 
@@ -433,7 +441,4 @@ class Player {
 
 }
 
-
-const board = new GameBoard();
-
-export { board, Player};
+export {Player};

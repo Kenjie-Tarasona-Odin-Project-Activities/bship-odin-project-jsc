@@ -6,8 +6,9 @@ class Game {
     #gameStart = false;
     #players = null;
     #placementMode = true;
-    #currentPlayerPlacing = 0;
+    #currentPlayer = 0;
     #playersLocked = 0;
+    #winCondition = 7;
 
     constructor(){
 
@@ -27,7 +28,7 @@ class Game {
 
         if(!this.#gameStart) return;
         if(payload === null) return;
-        if(payload.user !== this.#currentPlayerPlacing) return;
+        if(payload.user !== this.#currentPlayer) return;
 
         const caller = this.#players[payload.user].getGameBoard();
 
@@ -43,6 +44,9 @@ class Game {
             case "renderUtils":
                 return this.renderUtils(caller, payload.request);
             
+            case "gameUtils":
+                if(this.#placementMode) return false;
+                return this.gameUtils(caller, payload.request, parameters);
             default:
                 console.log("Request Type Invalid");
                 return;
@@ -52,13 +56,16 @@ class Game {
 
     placementUtils(caller, request, parameters){
         switch(request){
-
-             case "lockGrid": 
+            
+            case "lockGrid": 
                 if(!caller.lockGrid()) return false       
-                if(this.#currentPlayerPlacing === 1) this.#placementMode = false;
-                
-                this.#currentPlayerPlacing = 1;
-                console.log(this.#currentPlayerPlacing);
+                if(this.#currentPlayer === 1){
+                    this.#placementMode = false;
+                    this.#currentPlayer = 0; 
+                }
+                this.#currentPlayer = 1;
+                console.log(this.#currentPlayer);
+                console.log(this.#placementMode);
                 return true;
 
             case "placeShip":
@@ -100,6 +107,36 @@ class Game {
 
     }
 
+    gameUtils(caller, request, parameters){
+        const receiver = this.#players[1 - this.#currentPlayer].getGameBoard();
+
+        switch(request){
+
+            case "receiveAttack":
+                console.log(`caller ${this.#currentPlayer}`);
+                console.log(`receiver ${receiver}`);
+                const attackStatus = receiver.receiveAttack(...parameters);
+                if(attackStatus > 0){
+                    this.#currentPlayer = 1 - this.#currentPlayer;
+                    console.log(`current player after successful attack: ${this.#currentPlayer}`);
+                }
+                
+                return attackStatus;
+
+            case "checkIfGameOver":
+                const player1 = this.#players[0].getGameBoard();
+                const player2 = this.#players[1].getGameBoard();
+
+                if(player1.getDestroyedShipsCount === this.#winCondition){
+                    return 0;
+                }
+                if(player2.getDestroyedShipsCount === this.#winCondition){
+                    return 1;
+                }
+                return - 1;
+        }
+        
+    }
 }
 
 export {Game};

@@ -1,38 +1,4 @@
 import "./styles.css";
-import {Game} from "./gameLoop.js";
-import { Player } from "./script.js";
-
-const cellContainer = document.querySelector(".cell-container");
-const shipContainer = document.querySelector(".ship-container");
-let currentUser = 0;
-const main = document.querySelector("main");
-const lock = document.createElement("button");
-
-lock.textContent = "Lock in";
-lock.classList.add("lock-button");
-
-const dragData = {
-  draggables: [],
-  unplacedShipGettingDragged: false,
-  placedShipGettingDragged: false,
-  shipNumber: null,
-  distanceFromMiddlePoint: null,
-  startX: null,
-  startY: null,
-  iPosition: null,
-  jPosition: null,
-  outsideGrid: false,
-  isHorizontal: true,
-
-  getShip: function () {
-    if (this.shipNumber === null) return;
-    return this.draggables[this.shipNumber];
-  },
-};
-
-// vs player2 
-const  vsp2Button = document.querySelector("#vsp2");
-
 
 class GRID_UI{
   cell2dArray = [];
@@ -43,7 +9,10 @@ class GRID_UI{
   shipSectionNodes = [];
   shipSectionHandlerReferences = [];
 
-  constructor(){
+  constructor(parentNode, dragData, gameRequest, currentUser){
+    this.dragData = dragData;
+    this.gameRequest = gameRequest;
+    this.currentUser = currentUser;
     this.playerContainer = document.createElement("div"); 
     this.cellContainer = document.createElement("div");
     this.shipContainer = document.createElement("div");
@@ -58,8 +27,14 @@ class GRID_UI{
     this.playerContainer.appendChild(this.shipContainer);
     this.playerContainer.appendChild(this.cellContainer);
 
-    main.appendChild(this.playerContainer);
+    this.parentNode = parentNode;
+    this.parentNode.appendChild(this.playerContainer);
 
+
+  }
+
+  removeShipsAndContainer(){
+    this.parentNode.removeChild(this.playerContainer);
   }
 
   detachAllListeners(){
@@ -76,8 +51,6 @@ class GRID_UI{
 
       }
     }
-
-    // console.log(this.shipSectionNodes);
 
     for(let i = 0; i < this.shipSectionNodes.length; i++){
       const shipSection = this.shipSectionNodes[i];
@@ -110,69 +83,41 @@ class GRID_UI{
     let isPlaced = false;
     const handleDragInsideGrid = () => {
     
-      if (dragData.unplacedShipGettingDragged){
-        dragData.getShip().style.visibility = "hidden";
-        isPlaced = game.request({
-          user: currentUser,
-          type: "placementUtils",
-          request: "placeShip",
-          parameters: [dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint],
-        })
+      if (this.dragData.unplacedShipGettingDragged){
+        this.dragData.getShip().style.visibility = "hidden";
+        const parameters = [this.dragData.shipNumber, iPosition, jPosition + this.dragData.distanceFromMiddlePoint];
+        isPlaced = this.gameRequest(this.currentUser, "placementUtils", "placeShip", parameters);
 
         if(isPlaced){
-          this.renderGrid(game.request({
-          user: currentUser,
-          type: "renderUtils",
-          request: "getTempGrid",
-          parameters: [],
-          }));
+          const grid = this.gameRequest(this.currentUser, "renderUtils", "getTempGrid")
+          this.renderGrid(grid);
         }else{
-          this.renderGrid(game.request({
-            user: currentUser,
-            type: "renderUtils",
-            request: "getGrid",
-            parameters: [],
-          }));
+          const grid = this.gameRequest(this.currentUser, "renderUtils", "getGrid");
+          this.renderGrid(grid);
         }
         
         return;
       };
 
-      if(dragData.placedShipGettingDragged){
+      if(this.dragData.placedShipGettingDragged){
         // Update for ship rotation
         console.log("placed");
-        dragData.outsideGrid = false;
+        this.dragData.outsideGrid = false;
         
-        if(dragData.isHorizontal){
-          isPlaced = game.request({
-            user: currentUser,
-            type: "placementUtils",
-            request: "movePlacedShip",
-            parameters: [dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint]
-          })
+        if(this.dragData.isHorizontal){
+          const parameters = [this.dragData.shipNumber, iPosition, jPosition + this.dragData.distanceFromMiddlePoint];
+          isPlaced = this.gameRequest(this.currentUser, "placementUtils", "movePlacedShip", parameters);
         }else{
-          isPlaced = game.request({
-            user: currentUser,
-            type: "placementUtils",
-            request: "movePlacedShip",
-            parameters: [dragData.shipNumber, iPosition + dragData.distanceFromMiddlePoint, jPosition]
-          });
+          const parameters = [this.dragData.shipNumber, iPosition + this.dragData.distanceFromMiddlePoint, jPosition];
+          isPlaced = this.gameRequest(this.currentUser, "placementUtils", "movePlacedShip", parameters,);
         }
         
         if(isPlaced){
-          this.renderGrid(game.request({
-            user: currentUser,
-            type: "renderUtils",
-            request: "getTempGrid",
-            parameters: [],
-          }));
+          const grid = this.gameRequest(this.currentUser, "renderUtils", "getTempGrid")
+          this.renderGrid(grid);
         }else{
-          this.renderGrid(game.request({
-            user: currentUser,
-            type: "renderUtils",
-            request: "getGridWhereTheSelectedShipIsRemoved",
-            parameters: [],
-          }));
+          const grid = this.gameRequest(this.currentUser, "renderUtils", "getGridWhereTheSelectedShipIsRemoved")
+          this.renderGrid(grid);
         }
       }
     }
@@ -181,25 +126,17 @@ class GRID_UI{
 
       isPlaced = false;
 
-      if(dragData.unplacedShipGettingDragged){
-        dragData.getShip().style.visibility = "visible";
-        this.renderGrid(game.request({
-          user: currentUser,
-          type: "renderUtils",
-          request: "getGrid",
-          parameters: [],
-        }));
+      if(this.dragData.unplacedShipGettingDragged){
+        this.dragData.getShip().style.visibility = "visible";
+        const grid = this.gameRequest(this.currentUser, "renderUtils", "getGrid");
+        this.renderGrid(grid);
         return;
       }
 
-      if(dragData.placedShipGettingDragged){
-        dragData.outsideGrid = true;
-        this.renderGrid(game.request({
-          user: currentUser,
-          type: "renderUtils",
-          request: "getGridWhereTheSelectedShipIsRemoved",
-          parameters: [],
-        }));
+      if(this.dragData.placedShipGettingDragged){
+        this.dragData.outsideGrid = true;
+        const grid = this.gameRequest(this.currentUser, "renderUtils", "getGridWhereTheSelectedShipIsRemoved");
+        this.renderGrid(grid);
       }
 
     }
@@ -207,64 +144,37 @@ class GRID_UI{
     const handleCellMouseUp = () => {
 
     // picking up and placing at the same place triggers rotation
-      if(dragData.placedShipGettingDragged && iPosition === dragData.iPosition && jPosition === dragData.jPosition){
+      if(this.dragData.placedShipGettingDragged && iPosition === this.dragData.iPosition && jPosition === this.dragData.jPosition){
         
         console.log("trigger rotation");
         let isRotationSuccessful;
         
-        if(dragData.isHorizontal){
-          isRotationSuccessful =  game.request({
-            user: currentUser,
-            type: "placementUtils",
-            request: "rotatePlacedShip",
-            parameters: [dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint],
-          });
+        if(this.dragData.isHorizontal){
+          const parameters = [this.dragData.shipNumber, iPosition, jPosition + this.dragData.distanceFromMiddlePoint];
+          isRotationSuccessful =  this.gameRequest(this.currentUser, "placementUtils", "rotatePlacedShip", parameters);
         }else{
-          isRotationSuccessful = game.request({
-            user: currentUser,
-            type: "placementUtils",
-            request: "rotatePlacedShip",
-            parameters: [dragData.shipNumber, iPosition + dragData.distanceFromMiddlePoint, jPosition],
-          });
+          const parameters = [this.dragData.shipNumber, iPosition + this.dragData.distanceFromMiddlePoint, jPosition];
+          isRotationSuccessful = this.gameRequest(this.currentUser, "placementUtils", "rotatePlacedShip", parameters);
         }
 
-        console.log(isRotationSuccessful);  
+        console.log(`Rotation Sucessful : ${isRotationSuccessful}`);  
         if(isRotationSuccessful){
-          this.renderGrid(game.request({
-            user: currentUser,
-            type: "renderUtils",
-            request: "getTempGrid",
-            parameters: [],
-          }));
-          game.request({
-            user: currentUser,
-            type: "placementUtils",
-            request: "updateGrid",
-            parameters: [],
-          });
+          const grid = this.gameRequest(this.currentUser, "renderUtils", "getTempGrid");
+          this.renderGrid(grid);
+          this.gameRequest(this.currentUser, "placementUtils", "updateGrid");
         }
 
         return;  
       }
 
       if(!isPlaced){
-        this.renderGrid(game.request({
-          user: currentUser,
-          type: "renderUtils",
-          request: "getGrid",
-          parameters: [],
-        }));
+        const grid = this.gameRequest(this.currentUser, "renderUtils", "getGrid");
+        this.renderGrid(grid);
         return;
       } 
 
-      if(dragData.unplacedShipGettingDragged || dragData.placedShipGettingDragged){
-        game.request({
-          user: currentUser,
-          type: "placementUtils",
-          request: "updateGrid",
-          parameters: [],
-        });
-
+      if(this.dragData.unplacedShipGettingDragged || this.dragData.placedShipGettingDragged){
+        this.gameRequest(this.currentUser, "placementUtils", "updateGrid");
         isPlaced = false;
         return;
       }
@@ -272,37 +182,24 @@ class GRID_UI{
     }
 
     const handleCellMouseDown = () => {
-      const positionData = game.request({
-        user: currentUser,
-        type: "placementUtils",
-        request: "getPositionData",
-        parameters: [iPosition, jPosition]
-      });
+      const positionData = this.gameRequest(this.currentUser, "placementUtils", "getPositionData", [iPosition, jPosition]);
       
-      console.log(positionData);
       if(positionData === null) return;
-      dragData.placedShipGettingDragged = true;
-      dragData.shipNumber = positionData.shipNumber;
-      dragData.distanceFromMiddlePoint = positionData.distanceFromMiddlePoint;
-      dragData.isHorizontal = positionData.isHorizontal;
-      dragData.iPosition = iPosition;
-      dragData.jPosition = jPosition;
-      dragData.isHorizontal = positionData.isHorizontal;
+      this.dragData.placedShipGettingDragged = true;
+      this.dragData.shipNumber = positionData.shipNumber;
+      this.dragData.distanceFromMiddlePoint = positionData.distanceFromMiddlePoint;
+      this.dragData.isHorizontal = positionData.isHorizontal;
+      this.dragData.iPosition = iPosition;
+      this.dragData.jPosition = jPosition;
+      this.dragData.isHorizontal = positionData.isHorizontal;
 
-      if(positionData.isHorizontal)
-        game.request({
-          user: currentUser,
-          type: "placementUtils",
-          request: "removeShip",
-          parameters: [dragData.shipNumber, iPosition, jPosition + dragData.distanceFromMiddlePoint]
-        });
-      else
-        game.request({
-          user: currentUser,
-          type: "placementUtils",
-          request: "removeShip",
-          parameters: [dragData.shipNumber, iPosition + dragData.distanceFromMiddlePoint, jPosition]
-        });
+      if(positionData.isHorizontal){
+        const parameters = [this.dragData.shipNumber, iPosition, jPosition + this.dragData.distanceFromMiddlePoint];
+        this.gameRequest(this.currentUser, "placementUtils", "removeShip", parameters);
+       }else{
+        const parameters = [this.dragData.shipNumber, iPosition + this.dragData.distanceFromMiddlePoint, jPosition];
+        this.gameRequest(this.currentUser, "placementUtils", "removeShip", parameters);
+      }
     }
 
     cell.addEventListener("mouseenter", handleDragInsideGrid);
@@ -342,18 +239,18 @@ class GRID_UI{
       ship.style.left = "30px"; 
       gap += 85;
       this.playerContainer.appendChild(ship);
-      dragData.draggables.push(ship);
+      this.dragData.draggables.push(ship);
     }
 
   }
 
   bindEventListenerToShipSection(shipNumber, shipSection, distanceFromMiddlePoint) {
     const handleShipSectionMouseDown = e => {
-      dragData.unplacedShipGettingDragged = true;
-      dragData.distanceFromMiddlePoint = distanceFromMiddlePoint;
-      dragData.shipNumber = shipNumber;
-      dragData.startX = e.clientX;
-      dragData.startY = e.clientY;
+      this.dragData.unplacedShipGettingDragged = true;
+      this.dragData.distanceFromMiddlePoint = distanceFromMiddlePoint;
+      this.dragData.shipNumber = shipNumber;
+      this.dragData.startX = e.clientX;
+      this.dragData.startY = e.clientY;
     }
     shipSection.addEventListener("mousedown", handleShipSectionMouseDown);
     
@@ -364,7 +261,7 @@ class GRID_UI{
 
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        const color = encodeToColor(grid[i][j]);
+        const color = this.encodeToColor(grid[i][j]);
         const cell = this.cell2dArray[i][j];
         cell.style.background = color;
       }
@@ -373,24 +270,14 @@ class GRID_UI{
   }
 
   clearGrid(){
-    const newGrid = game.request({
-      user: currentUser,
-      type: "renderUtils",
-      request: "getGrid"
-    })
-
-    this.renderGrid(newGrid);
-
-  }
-
-  removeNode(parent, child){
-    parent.removeChild(child);
+    const grid = this.gameRequest(this.currentUser, "renderUtils", "getGrid");
+    this.renderGrid(grid);
   }
 
   restoreShipPositions(){
     let gap = 15;
 
-    const ships = dragData.draggables;
+    const ships = this.dragData.draggables;
 
     ships.forEach(ship => {
       ship.style.visibility = "visible";
@@ -401,80 +288,87 @@ class GRID_UI{
 
   }
 
+  updateCurrentUser(){
+    this.currentUser = 1;
+  }
+
+  droppedOutsideGrid(){
+    const grid = this.gameRequest(this.currentUser, "renderUtils", "getGrid");
+    this.renderGrid(grid);
+  }
+  
+  encodeToColor(input){
+    if (typeof input === "object") return "green";
+    if (input === -1) return "red";
+    return "white";
+  }
+
+}
+
+class ATTACK_UI{
+  
+
+  GRID_SIZE = 8;
+  INVALID_ATTACK = 0;
+  
+  constructor(ID, triggerProgression, parentNode){
+    this.ID = ID;
+    this.triggerProgression = triggerProgression;
+    this.cellContainer = document.createElement("div");
+    this.cellContainer.classList.add("cell-container");
+    this.createCells();
+    this.parentNode = parentNode;
+    this.parentNode.appendChild(cellContainer);
+  }
+
+  createCells(){
+    for(let i = 0; i < this.GRID_SIZE; i++){
+      for(let j = 0; j < this.GRID_SIZE; j++){
+        const cell = document.createElement("div");
+        cell.classList.add(cell);
+        this.cellContainer.appendChild(cell);
+      }
+    }
+  }
+
+  bindEventListenerToGridCell(cell, i, j){
+    
+    cell.addEventListener("click", e => { 
+      const attackStatus = this.game.request({
+        user: ID,
+        type: "this.gameUtils",
+        request: "receiveAttack",
+        parameters: [iPosition, jPosition]
+      });
+
+
+      if(attackStatus === this.INVALID_ATTACK) return;
+      e.target.textContent = this.decodeAttackStatus(attackStatus);
+      this.unrenderGrid();
+      this.event();
+    });
+
+
+  }
+
+  decodeAttackStatus(attackStatus){
+    if(attackStatus === 1) return "X";
+    if(attackStatus === 2) return ".";
+    return;
+  }
+
+  renderGrid(){
+    this.parentNode.appendChild(this.cellContainer);
+  }
+
+  unrenderGrid(){
+    this.parentNode.removeChild(this.cellContainer);
+  }
+  
 
 
 }
 
-function encodeToColor(input) {
-  if (typeof input === "object") return "green";
-  if (input === -1) return "red";
-  return "white";
-}
 
 
-document.addEventListener("mousemove", e => {
-  if (!dragData.unplacedShipGettingDragged) return;
-  const ship = dragData.getShip()
-
-  let newX = dragData.startX - e.clientX;
-  let newY = dragData.startY - e.clientY;
-
-  dragData.startX = e.clientX;
-  dragData.startY = e.clientY;
-
-  ship.style.left = `${ship.offsetLeft - newX}px`;
-  ship.style.top = `${ship.offsetTop - newY}px`;
-  
-});
-
-document.addEventListener("mouseup", () => {
-  
-  if(dragData.placedShipGettingDragged && dragData.outsideGrid){
-    grid.renderGrid(game.request({
-      user: currentUser,
-      type: "renderUtils",
-      request: "getGrid",
-      parameters: [],
-    }));
-  }
-
-  dragData.unplacedShipGettingDragged = false;
-  dragData.placedShipGettingDragged = false;
-  dragData.shipNumber = null;
-  dragData.startX = null;
-  dragData.startY = null;
-  dragData.isHorizontal = true;
-});
-
-const game = new Game();
-
-game.start()
-
-const grid = new GRID_UI();
-
-main.appendChild(lock);
-lock.addEventListener("click", () => {
-  const lockSuccessful = game.request({
-    user: currentUser,
-    type: "placementUtils",
-    request: "lockGrid",
-    parameter: [],
-  });
-  
-  if(currentUser === 0 && lockSuccessful){
-    currentUser = 1;
-    console.log("lock successful");
-    grid.clearGrid();
-    grid.restoreShipPositions();
-    grid.detachAllListeners();
-    return;
-  }
-
-  if(currentUser === 1 && lockSuccessful){
-    console.log("placement done");
-    return;
-  }
-
-  console.log("lock failed");
-
-});
+export {GRID_UI};

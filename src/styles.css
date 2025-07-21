@@ -52,6 +52,10 @@
   z-index: 2;
 }
 
+.cell-container-atk-mode{
+  margin-left: 5rem;
+}
+
 .cell {
   border: 1px solid black;
 }
