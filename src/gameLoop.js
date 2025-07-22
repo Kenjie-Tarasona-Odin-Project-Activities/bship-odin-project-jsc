@@ -46,7 +46,7 @@ class Game {
             
             case "gameUtils":
                 if(this.#placementMode) return false;
-                return this.gameUtils(caller, payload.request, parameters);
+                return this.gameUtils(caller, payload.request, payload.parameters);
             default:
                 console.log("Request Type Invalid");
                 return;
@@ -62,6 +62,7 @@ class Game {
                 if(this.#currentPlayer === 1){
                     this.#placementMode = false;
                     this.#currentPlayer = 0; 
+                    return true;
                 }
                 this.#currentPlayer = 1;
                 console.log(this.#currentPlayer);
@@ -123,10 +124,10 @@ class Game {
                 
                 return attackStatus;
 
-            case "checkIfGameOver":
+            case "isGameOver":
                 const player1 = this.#players[0].getGameBoard();
                 const player2 = this.#players[1].getGameBoard();
-
+                
                 if(player1.getDestroyedShipsCount === this.#winCondition){
                     return 0;
                 }

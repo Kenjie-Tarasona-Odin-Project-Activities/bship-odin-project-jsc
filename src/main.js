@@ -311,21 +311,22 @@ class ATTACK_UI{
   GRID_SIZE = 8;
   INVALID_ATTACK = 0;
   
-  constructor(ID, triggerProgression, parentNode){
+  constructor(ID, parentNode, isGameOver, gameRequest){
     this.ID = ID;
-    this.triggerProgression = triggerProgression;
+    this.isGameOver = isGameOver;
+    this.gameRequest = gameRequest;
     this.cellContainer = document.createElement("div");
     this.cellContainer.classList.add("cell-container");
     this.createCells();
     this.parentNode = parentNode;
-    this.parentNode.appendChild(cellContainer);
   }
 
   createCells(){
     for(let i = 0; i < this.GRID_SIZE; i++){
       for(let j = 0; j < this.GRID_SIZE; j++){
         const cell = document.createElement("div");
-        cell.classList.add(cell);
+        cell.classList.add("cell");
+        this.bindEventListenerToGridCell(cell, i, j);
         this.cellContainer.appendChild(cell);
       }
     }
@@ -334,20 +335,14 @@ class ATTACK_UI{
   bindEventListenerToGridCell(cell, i, j){
     
     cell.addEventListener("click", e => { 
-      const attackStatus = this.game.request({
-        user: ID,
-        type: "this.gameUtils",
-        request: "receiveAttack",
-        parameters: [iPosition, jPosition]
-      });
-
+      console.log(`i: ${i}, j: ${j}`)
+      const attackStatus = this.gameRequest(this.ID, "gameUtils", "receiveAttack",[i, j]);
 
       if(attackStatus === this.INVALID_ATTACK) return;
       e.target.textContent = this.decodeAttackStatus(attackStatus);
-      this.unrenderGrid();
-      this.event();
+      
+      this.isGameOver();
     });
-
 
   }
 
@@ -364,11 +359,10 @@ class ATTACK_UI{
   unrenderGrid(){
     this.parentNode.removeChild(this.cellContainer);
   }
-  
 
 
 }
 
 
 
-export {GRID_UI};
+export {GRID_UI, ATTACK_UI};

@@ -1,4 +1,4 @@
-import { GRID_UI } from "./main.js";
+import { ATTACK_UI, GRID_UI } from "./main.js";
 import { Game } from "./gameLoop";
 let currentUser = 0;
 const main = document.querySelector("main");
@@ -67,6 +67,36 @@ document.addEventListener("mouseup", () => {
 
 main.appendChild(lock);
 
+const isGameOver = () => {
+  let currentPlayerGrid = playerAttackGrid[currentUser];
+  const gameStatus = gameRequest(currentUser, "gameUtils", "isGameOver");
+  
+  switch(gameStatus){
+    case 0:
+      alert("Player 1 Wins");
+      return;
+    case 1:
+      alert("Player 2 Wins");
+      return;
+    default:
+      console.log("round continues");
+  }
+
+  setTimeout(() => {
+    currentPlayerGrid.unrenderGrid();
+    currentUser = 1 - currentUser;
+    currentPlayerGrid = playerAttackGrid[currentUser];
+    currentPlayerGrid.renderGrid();
+  }, 5000);
+
+   
+}
+
+const playerAttackGrid = [
+  new ATTACK_UI(0, main, isGameOver, gameRequest),
+  new ATTACK_UI(1, main, isGameOver, gameRequest),
+];
+
 lock.addEventListener("click", e => {
   const lockSuccessful = gameRequest(currentUser, "placementUtils", "lockGrid");
   
@@ -82,9 +112,10 @@ lock.addEventListener("click", e => {
   if(currentUser === 1 && lockSuccessful){
     gridUI.detachAllListeners();
     gridUI.removeShipsAndContainer();
-    currentUser = 0;
     e.target.parentNode.removeChild(e.target);
+    currentUser = 1 - currentUser;
     console.log("placement done");
+    playerAttackGrid[currentUser].renderGrid();
     return;
   }
 
@@ -92,8 +123,11 @@ lock.addEventListener("click", e => {
 
 });
 
+ 
 
-function 
+
+
+
 
 
 
