@@ -23,7 +23,7 @@ class Ship {
   };
 
   isDestroyed = function () {
-    if (this.#length === this.#numberOfTimesHit) this.#destroyed = true;
+    if (this.#length === this.#numberOfTimesHit) return true;
   };
 
   rotate() {
@@ -410,7 +410,9 @@ class GameBoard {
     if(typeof positionData === "object"){
       const ship = this.getShip(positionData.shipNumber);
       ship.hit();
+      
       if(ship.isDestroyed()){
+        console.log("from receive attack");
         this.#destroyed_ships.push(positionData.shipNumber);
       }
       this.#grid[iPosition][jPosition] = this.#SHOT_HIT;

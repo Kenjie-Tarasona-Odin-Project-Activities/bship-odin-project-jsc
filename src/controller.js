@@ -1,76 +1,115 @@
 import { ATTACK_UI, GRID_UI } from "./main.js";
 import { Game } from "./gameLoop";
-let currentUser = 0;
-const main = document.querySelector("main");
-const lock = document.createElement("button");
-lock.textContent = "Lock in";
-lock.classList.add("lock-button");
 
-const  vsp2Button = document.querySelector("#vsp2")
+const local = {
+  currentUser: 0,
+  dragAndDropController:  {
+    draggables: [],
+    unplacedShipGettingDragged: false,
+    placedShipGettingDragged: false,
+    shipNumber: null,
+    distanceFromMiddlePoint: null,
+    startX: null,
+    startY: null,
+    iPosition: null,
+    jPosition: null,
+    outsideGrid: false,
+    isHorizontal: true,
 
-const dragData = {
-  draggables: [],
-  unplacedShipGettingDragged: false,
-  placedShipGettingDragged: false,
-  shipNumber: null,
-  distanceFromMiddlePoint: null,
-  startX: null,
-  startY: null,
-  iPosition: null,
-  jPosition: null,
-  outsideGrid: false,
-  isHorizontal: true,
-
-  getShip: function () {
-    if (this.shipNumber === null) return;
-    return this.draggables[this.shipNumber];
+    getShip: function () {
+      if (this.shipNumber === null) return;
+      return this.draggables[this.shipNumber];
+    },
   },
-};
-
-const game = new Game();
-game.start();
-
-const gameRequest = (user, type, request, parameters = []) => {
-  return game.request({user, type, request, parameters});
+  main: document.querySelector("main"),
+  lockButton: document.createElement("button"),
+  vsp2Button: document.querySelector("#vsp2"),
+  game: new Game(), 
+  gridUI: null,
+  playerAttackGrid: null,
 }
 
-const gridUI = new GRID_UI(main, dragData, gameRequest, currentUser);
 
-document.addEventListener("mousemove", e => {
-  if (!dragData.unplacedShipGettingDragged) return;
-  const ship = dragData.getShip()
+function gameRequest(user, type, request, parameters = []){
+  return local.game.request({user, type, request, parameters});
+}
 
-  let newX = dragData.startX - e.clientX;
-  let newY = dragData.startY - e.clientY;
+function appInit(){
+  local.gridUI = new GRID_UI(local.main, local.dragAndDropController, gameRequest);
+  local.playerAttackGrid = [
+      new ATTACK_UI(0, local.main, isGameOver, gameRequest),
+      new ATTACK_UI(1, local.main, isGameOver, gameRequest),
+  ];
 
-  dragData.startX = e.clientX;
-  dragData.startY = e.clientY;
+  document.addEventListener("mousemove", e => {
+    if (!local.dragAndDropController.unplacedShipGettingDragged) return;
+    const ship = local.dragAndDropController.getShip()
 
-  ship.style.left = `${ship.offsetLeft - newX}px`;
-  ship.style.top = `${ship.offsetTop - newY}px`;
+    let newX = local.dragAndDropController.startX - e.clientX;
+    let newY = local.dragAndDropController.startY - e.clientY;
+
+    local.dragAndDropController.startX = e.clientX;
+    local.dragAndDropController.startY = e.clientY;
+
+    ship.style.left = `${ship.offsetLeft - newX}px`;
+    ship.style.top = `${ship.offsetTop - newY}px`;
+    
+  });
+
+  document.addEventListener("mouseup", () => {
+    
+    if(local.dragAndDropController.placedShipGettingDragged && local.dragAndDropController.outsideGrid){
+      local.gridUI.droppedOutsideGrid();
+    }
+
+    local.dragAndDropController.unplacedShipGettingDragged = false;
+    local.dragAndDropController.placedShipGettingDragged = false;
+    local.dragAndDropController.shipNumber = null;
+    local.dragAndDropController.startX = null;
+    local.dragAndDropController.startY = null;
+    local.dragAndDropController.isHorizontal = true;
+  });
+
+  local.lockButton.addEventListener("click", e => {
+  const lockSuccessful = gameRequest(local.currentUser, "placementUtils", "lockGrid");
   
-});
-
-document.addEventListener("mouseup", () => {
-  
-  if(dragData.placedShipGettingDragged && dragData.outsideGrid){
-    gridUI.droppedOutsideGrid();
+  if(local.currentUser === 0 && lockSuccessful){
+    local.currentUser = 1;
+    console.log("lock successful");
+    local.gridUI.updateCurrentUser();
+    local.gridUI.clearGrid();
+    local.gridUI.restoreShipPositions();
+    return;
   }
 
-  dragData.unplacedShipGettingDragged = false;
-  dragData.placedShipGettingDragged = false;
-  dragData.shipNumber = null;
-  dragData.startX = null;
-  dragData.startY = null;
-  dragData.isHorizontal = true;
-});
+  if(local.currentUser === 1 && lockSuccessful){
+    local.gridUI.detachAllListeners();
+    local.gridUI.removeShipsAndContainer();
+    e.target.parentNode.removeChild(e.target);
+    local.currentUser = 0;
+    console.log("placement done");
+    local.playerAttackGrid[local.currentUser].renderGrid();
+    return;
+  }
 
-main.appendChild(lock);
+  console.log("lock failed");
 
-const isGameOver = () => {
-  let currentPlayerGrid = playerAttackGrid[currentUser];
-  const gameStatus = gameRequest(currentUser, "gameUtils", "isGameOver");
-  
+  });
+
+  local.lockButton.textContent = "Lock in";
+  local.lockButton.classList.add("lock-button");
+  local.game.start();
+  local.main.appendChild(local.lockButton);
+}
+
+appInit();
+
+function isGameOver(){
+  let currentPlayerGrid = local.playerAttackGrid[local.currentUser];
+  currentPlayerGrid.disablePtrEvents();
+  local.currentUser = 1 - local.currentUser;
+  const gameStatus = gameRequest(local.currentUser, "gameUtils", "isGameOver");
+  console.log(`Game Status: ${gameStatus}`);
   switch(gameStatus){
     case 0:
       alert("Player 1 Wins");
@@ -84,45 +123,14 @@ const isGameOver = () => {
 
   setTimeout(() => {
     currentPlayerGrid.unrenderGrid();
-    currentUser = 1 - currentUser;
-    currentPlayerGrid = playerAttackGrid[currentUser];
-    currentPlayerGrid.renderGrid();
-  }, 5000);
-
+    const newPlayerGrid = local.playerAttackGrid[local.currentUser];
+    newPlayerGrid.renderGrid();
+  }, 2000);
    
 }
 
-const playerAttackGrid = [
-  new ATTACK_UI(0, main, isGameOver, gameRequest),
-  new ATTACK_UI(1, main, isGameOver, gameRequest),
-];
 
-lock.addEventListener("click", e => {
-  const lockSuccessful = gameRequest(currentUser, "placementUtils", "lockGrid");
-  
-  if(currentUser === 0 && lockSuccessful){
-    currentUser = 1;
-    console.log("lock successful");
-    gridUI.updateCurrentUser();
-    gridUI.clearGrid();
-    gridUI.restoreShipPositions();
-    return;
-  }
-
-  if(currentUser === 1 && lockSuccessful){
-    gridUI.detachAllListeners();
-    gridUI.removeShipsAndContainer();
-    e.target.parentNode.removeChild(e.target);
-    currentUser = 1 - currentUser;
-    console.log("placement done");
-    playerAttackGrid[currentUser].renderGrid();
-    return;
-  }
-
-  console.log("lock failed");
-
-});
-
+alert("TEST");
  
 
 

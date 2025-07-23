@@ -9,10 +9,10 @@ class GRID_UI{
   shipSectionNodes = [];
   shipSectionHandlerReferences = [];
 
-  constructor(parentNode, dragData, gameRequest, currentUser){
+  constructor(parentNode, dragData, gameRequest){
     this.dragData = dragData;
     this.gameRequest = gameRequest;
-    this.currentUser = currentUser;
+    this.currentUser = 0;
     this.playerContainer = document.createElement("div"); 
     this.cellContainer = document.createElement("div");
     this.shipContainer = document.createElement("div");
@@ -336,7 +336,7 @@ class ATTACK_UI{
     
     cell.addEventListener("click", e => { 
       console.log(`i: ${i}, j: ${j}`)
-      const attackStatus = this.gameRequest(this.ID, "gameUtils", "receiveAttack",[i, j]);
+      const attackStatus = this.gameRequest(this.ID, "gameUtils", "receiveAttack", [i, j]);
 
       if(attackStatus === this.INVALID_ATTACK) return;
       e.target.textContent = this.decodeAttackStatus(attackStatus);
@@ -354,10 +354,20 @@ class ATTACK_UI{
 
   renderGrid(){
     this.parentNode.appendChild(this.cellContainer);
+    this.enablePtrEvents();
   }
 
   unrenderGrid(){
     this.parentNode.removeChild(this.cellContainer);
+  }
+
+  disablePtrEvents(){
+    this.cellContainer.style.pointerEvents = "none";
+  }
+
+  enablePtrEvents(){
+    this.cellContainer.style.pointerEvents = "auto";
+
   }
 
 

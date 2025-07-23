@@ -114,25 +114,34 @@ class Game {
         switch(request){
 
             case "receiveAttack":
-                console.log(`caller ${this.#currentPlayer}`);
-                console.log(`receiver ${receiver}`);
+                console.log(`Caller ${this.#currentPlayer}`);
+                console.log(`Receiver: ${1 - this.#currentPlayer}`);
+                console.log(`Receiver Grid State BA`)
+                console.table(receiver.getGrid());
                 const attackStatus = receiver.receiveAttack(...parameters);
                 if(attackStatus > 0){
                     this.#currentPlayer = 1 - this.#currentPlayer;
                     console.log(`current player after successful attack: ${this.#currentPlayer}`);
                 }
-                
+                console.log(`Attack Status: ${attackStatus}`);
+                console.log(`Receiver Grid State AA`);
+                console.table(receiver.getGrid());
+                console.log(`Receiver Destroyed Ships: ${receiver.getDestroyedShips()}`);
+
                 return attackStatus;
 
             case "isGameOver":
                 const player1 = this.#players[0].getGameBoard();
                 const player2 = this.#players[1].getGameBoard();
                 
-                if(player1.getDestroyedShipsCount === this.#winCondition){
-                    return 0;
-                }
-                if(player2.getDestroyedShipsCount === this.#winCondition){
+                console.log(`P1 Destroyed Ships Count; ${player1.getDestroyedShipsCount()}`);
+                console.log(`P2 Destroyed Ships Count; ${player2.getDestroyedShipsCount()}`);
+
+                if(player1.getDestroyedShipsCount() === this.#winCondition){
                     return 1;
+                }
+                if(player2.getDestroyedShipsCount() === this.#winCondition){
+                    return 0;
                 }
                 return - 1;
         }
