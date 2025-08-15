@@ -126,12 +126,8 @@ function isGameOver(){
     const newPlayerGrid = local.playerAttackGrid[local.currentUser];
     newPlayerGrid.renderGrid();
   }, 2000);
-   
+  
 }
-
-
-alert("TEST");
- 
 
 
 
